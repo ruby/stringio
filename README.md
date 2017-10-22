@@ -1,8 +1,13 @@
 # Stringio
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/stringio`. To experiment with that code, run `bin/console` for an interactive prompt.
+Pseudo `IO` class from/to `String`.
 
-TODO: Delete this and the text above, and describe your gem
+This library is based on MoonWolf version written in Ruby.  Thanks a lot.
+
+## Differences to `IO`
+
+* `fileno` raises `NotImplementedError`.
+* encoding conversion is not implemented, and ignored silently.
 
 ## Installation
 
@@ -19,10 +24,6 @@ And then execute:
 Or install it yourself as:
 
     $ gem install stringio
-
-## Usage
-
-TODO: Write usage instructions here
 
 ## Development
 
