@@ -1,4 +1,4 @@
-# Stringio
+# StringIO
 
 Pseudo `IO` class from/to `String`.
 
