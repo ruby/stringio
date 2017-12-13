@@ -1,5 +1,7 @@
 # StringIO
 
+[![Build Status](https://travis-ci.org/ruby/stringio.svg?branch=master)](https://travis-ci.org/ruby/stringio)
+
 Pseudo `IO` class from/to `String`.
 
 This library is based on MoonWolf version written in Ruby.  Thanks a lot.
