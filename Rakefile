@@ -9,7 +9,7 @@ Rake::TestTask.new(:test) do |t|
 end
 
 require 'rake/extensiontask'
-spec = eval(File.read('stringio.gemspec'))
+spec = eval(File.read('stringio.gemspec'), nil, 'stringio.gemspec')
 spec.files.delete_if {|n| %r'\Aext/' =~ n}
 spec.extensions.clear
 spec.require_paths.insert(0, *%w[stub])
