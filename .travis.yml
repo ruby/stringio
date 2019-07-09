@@ -6,3 +6,6 @@ rvm:
   - ruby-head
 before_install:
   - gem update --system
+install:
+script:
+  - rake
