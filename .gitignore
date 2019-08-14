@@ -11,3 +11,4 @@
 *.bundle
 *.dll
 *.so
+Makefile
