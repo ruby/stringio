@@ -30,7 +30,7 @@
 #define rb_io_extract_modeenc strio_extract_modeenc
 static void
 strio_extract_modeenc(VALUE *vmode_p, VALUE *vperm_p, VALUE opthash,
-        int *oflags_p, int *fmode_p, struct rb_io_enc_t *convconfig_p)
+		      int *oflags_p, int *fmode_p, struct rb_io_enc_t *convconfig_p)
 {
     VALUE mode = *vmode_p;
     int fmode;
@@ -70,12 +70,12 @@ strio_extract_modeenc(VALUE *vmode_p, VALUE *vperm_p, VALUE opthash,
     }
 
     if (!NIL_P(opthash)) {
-        rb_encoding *extenc = 0, *intenc = 0;
-        if (rb_io_extract_encoding_option(opthash, &extenc, &intenc, &fmode)) {
+	rb_encoding *extenc = 0, *intenc = 0;
+	if (rb_io_extract_encoding_option(opthash, &extenc, &intenc, &fmode)) {
 	    if (convconfig_p->enc || convconfig_p->enc2) {
 		rb_raise(rb_eArgError, "encoding specified twice");
 	    }
-        }
+	}
     }
     *fmode_p = fmode;
 }
