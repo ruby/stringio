@@ -9,6 +9,7 @@ VERSIONS = %w[2.4.0 2.5.0 2.6.0]
 Rake::TestTask.new(:test) do |t|
   t.libs << "test" << "test/lib"
   t.libs << "lib"
+  t.ruby_opts << "-rhelper"
   t.test_files = FileList["test/**/test_*.rb"]
 end
 
