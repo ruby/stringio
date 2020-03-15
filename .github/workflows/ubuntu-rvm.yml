@@ -17,7 +17,12 @@ jobs:
     - name: Set up Ruby
       run: |
         source $HOME/.rvm/scripts/rvm
-        rvm install ${{ matrix.ruby }} --binary
+        if [[ "${{ matrix.ruby }}" == "ruby-head" ]]; then
+          rvm install 2.7.0 --binary # some ruby is required for no --binary
+          rvm install ${{ matrix.ruby }}
+        else
+          rvm install ${{ matrix.ruby }} --binary
+        fi
         rvm --default use ${{ matrix.ruby }}
     - name: Set up Bundler
       run: |
