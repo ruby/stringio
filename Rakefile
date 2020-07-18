@@ -25,6 +25,22 @@ def helper.version=(v)
   gemspec.version = v
   tag_version
 end
+
+def helper.tag_version
+  v = version.to_s
+  src = "ext/stringio/stringio.c"
+  File.open(File.join(__dir__, src), "r+b") do |f|
+    code = f.read
+    code.sub!(/^#define\s+STRINGIO_VERSION\s+\K".*"/) {v.dump}
+    f.rewind
+    f.write(code)
+    f.truncate(f.pos)
+  end
+  # system("git", "--no-pager", "-C", __dir__, "diff", "-U0", src, exception: true)
+  system("git", "-C", __dir__, "commit", "-mBump version to #{version}", src, exception: true)
+  super
+end
+
 major, minor, teeny = helper.gemspec.version.segments
 
 task "bump:teeny" do
