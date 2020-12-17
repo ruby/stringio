@@ -3,7 +3,7 @@ require 'test/unit'
 
 class TestStringIOInRactor < Test::Unit::TestCase
   def setup
-    skip unless defined? Ractor
+    omit unless defined? Ractor
   end
 
   def test_ractor
