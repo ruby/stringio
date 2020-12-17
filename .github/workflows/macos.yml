@@ -4,7 +4,9 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on:
+    - macos-11.0
+    - macos-10.15
     strategy:
       matrix:
         ruby: [ '2.7', '2.6', '2.5', 'debug' ]
