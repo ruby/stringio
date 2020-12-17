@@ -1,6 +1,8 @@
 # StringIO
 
-[![Build Status](https://travis-ci.org/ruby/stringio.svg?branch=master)](https://travis-ci.org/ruby/stringio)
+![ubuntu](https://github.com/ruby/stringio/workflows/ubuntu/badge.svg?branch=master&event=push)
+![macos](https://github.com/ruby/stringio/workflows/macos/badge.svg?branch=master&event=push)
+![windows](https://github.com/ruby/stringio/workflows/windows/badge.svg?branch=master&event=push)
 
 Pseudo `IO` class from/to `String`.
 
