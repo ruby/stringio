@@ -11,7 +11,7 @@
 
 **********************************************************************/
 
-#define STRINGIO_VERSION "1.0.0"
+#define STRINGIO_VERSION "3.0.0"
 
 #include "ruby.h"
 #include "ruby/io.h"
