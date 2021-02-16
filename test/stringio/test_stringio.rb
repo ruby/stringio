@@ -798,7 +798,7 @@ class TestStringIO < Test::Unit::TestCase
   end
 
   def test_overflow
-    pend if RbConfig::SIZEOF["void*"] > RbConfig::SIZEOF["long"]
+    omit if RbConfig::SIZEOF["void*"] > RbConfig::SIZEOF["long"]
     limit = RbConfig::LIMITS["INTPTR_MAX"] - 0x10
     assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
     begin;
