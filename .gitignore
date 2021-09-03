@@ -11,4 +11,5 @@
 *.bundle
 *.dll
 *.so
+*.jar
 Makefile
