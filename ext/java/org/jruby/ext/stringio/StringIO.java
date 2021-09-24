@@ -1286,8 +1286,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
                 int c = StringSupport.codePoint(runtime, enc, stringBytes, begin + ptr.pos, stringBytes.length);
                 int n = StringSupport.codeLength(enc, c);
-                block.yield(context, runtime.newFixnum(c));
+
+                // increment before yield
                 ptr.pos += n;
+
+                block.yield(context, runtime.newFixnum(c));
             }
         }
     }
