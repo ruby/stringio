@@ -685,7 +685,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                         w = (chomp ? 1 : 0);
                         break;
                     }
-            	    else if (stringBytes[p] == '\r' && p < e && stringBytes[p + 1] == '\n') {
+                    else if (stringBytes[p] == '\r' && p < e && stringBytes[p + 1] == '\n') {
                         e = p + 2;
                         w = (chomp ? 2 : 0);
                         break;
