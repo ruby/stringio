@@ -75,8 +75,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
     StringIOData ptr;
 
-    private static final int STRIO_READABLE = ObjectFlags.STRIO_READABLE;
-    private static final int STRIO_WRITABLE = ObjectFlags.STRIO_WRITABLE;
+    private static final int STRIO_READABLE = ObjectFlags.registry.newFlag(StringIO.class);
+    private static final int STRIO_WRITABLE = ObjectFlags.registry.newFlag(StringIO.class);
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
     public static RubyClass createStringIOClass(final Ruby runtime) {
