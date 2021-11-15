@@ -3,9 +3,14 @@ require "rake/testtask"
 
 name = "stringio"
 
+require 'rake/extensiontask'
+extask = Rake::ExtensionTask.new(name) do |x|
+  x.lib_dir << "/#{RUBY_VERSION}/#{x.platform}"
+end
 Rake::TestTask.new(:test) do |t|
-  ENV["RUBYOPT"] = "-Ilib"
-  t.libs << "test" << "test/lib"
+  ENV["RUBYOPT"] = "-I" + [extask.lib_dir, "test/lib"].join(File::PATH_SEPARATOR)
+  t.libs << extask.lib_dir
+  t.libs << "test/lib"
   t.ruby_opts << "-rhelper"
   t.test_files = FileList["test/**/test_*.rb"]
 end
@@ -16,9 +21,6 @@ task :sync_tool do
   FileUtils.cp "../ruby/tool/lib/envutil.rb", "./test/lib"
   FileUtils.cp "../ruby/tool/lib/find_executable.rb", "./test/lib"
 end
-
-require 'rake/extensiontask'
-Rake::ExtensionTask.new(name)
 
 task :default => [:compile, :test]
 
