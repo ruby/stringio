@@ -22,3 +22,5 @@ jobs:
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Run test
       run: bundle exec rake
+    - name: Build gem
+      run: gem install rake-compiler && rake build
