@@ -20,6 +20,8 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+    - name: Compile
+      run: bundle exec rake compile
     - name: Build gem
       run: bundle exec rake build
     - uses: actions/upload-artifact@v3
