@@ -12,7 +12,7 @@ jobs:
         os:
         - ubuntu-20.04
         - ubuntu-18.04
-        ruby: [ '3.0', '2.7', '2.6', 'debug', 'head' ]
+        ruby: [ '3.0', '2.7', '2.6', 'debug', 'head', 'jruby-head' ]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
@@ -22,3 +22,5 @@ jobs:
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Run test
       run: bundle exec rake
+    - name: Build gem
+      run: gem install rake-compiler && rake build
