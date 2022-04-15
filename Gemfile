@@ -2,9 +2,8 @@ source "https://rubygems.org"
 
 gemspec
 
-gem 'rake-compiler'
-
 group :development do
-  gem 'test-unit'
+  gem 'rake-compiler'
   gem 'ruby-maven', :platforms => :jruby
+  gem 'test-unit'
 end
