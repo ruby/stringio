@@ -21,7 +21,7 @@ jobs:
         ruby-version: ${{ matrix.ruby }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Build gem
-      run: rake build
+      run: bundle exec rake build
     - uses: actions/upload-artifact@v3
       if: >-
         matrix.os == 'ubuntu-20.04' &&
