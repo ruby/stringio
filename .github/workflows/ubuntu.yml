@@ -12,7 +12,7 @@ jobs:
         os:
         - ubuntu-20.04
         - ubuntu-18.04
-        ruby: [ '3.0', '2.7', '2.6', 'debug', 'head', 'jruby-head' ]
+        ruby: [ '2.6', '2.7', '3.0', '3.1', 'debug', 'head', 'jruby-head' ]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
@@ -27,7 +27,7 @@ jobs:
     - uses: actions/upload-artifact@v3
       if: >-
         matrix.os == 'ubuntu-20.04' &&
-          (matrix.ruby == '3.0' || matrix.ruby == 'jruby-head')
+          (matrix.ruby == '3.1' || matrix.ruby == 'jruby-head')
       with:
         name: gem-${{ matrix.os }}-${{ matrix.ruby }}
         path: pkg/
@@ -35,7 +35,7 @@ jobs:
       if: >-
         startsWith(github.ref, 'refs/tags/') &&
           matrix.os == 'ubuntu-20.04' &&
-          (matrix.ruby == '3.0' || matrix.ruby == 'jruby-head')
+          (matrix.ruby == '3.1' || matrix.ruby == 'jruby-head')
       with:
         files: |
           pkg/*.gem
