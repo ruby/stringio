@@ -41,3 +41,4 @@ jobs:
           pkg/*.gem
     - name: Run test
       run: bundle exec rake
+      continue-on-error: ${{ startsWith(matrix.ruby, 'jruby') }}
