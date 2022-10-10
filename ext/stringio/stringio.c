@@ -257,9 +257,18 @@ strio_s_allocate(VALUE klass)
 }
 
 /*
- * call-seq: StringIO.new(string=""[, mode])
+ * call-seq:
+ *   StringIO.new(string = '', mode = 'r+') -> new_stringio
  *
- * Creates new StringIO instance from with _string_ and _mode_.
+ * Returns a new \StringIO instance formed from +string+ and +mode+;
+ * see {Access Modes}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Access+Modes]:
+ *
+ *   strio = StringIO.new # => #<StringIO>
+ *   strio.close
+ *
+ * The instance should be closed when no longer needed.
+ *
+ * Related: StringIO.open (accepts block; closes automatically).
  */
 static VALUE
 strio_initialize(int argc, VALUE *argv, VALUE self)
@@ -392,11 +401,24 @@ strio_finalize(VALUE self)
 }
 
 /*
- * call-seq: StringIO.open(string=""[, mode]) {|strio| ...}
+ * call-seq:
+ *   StringIO.open(string = '', mode = 'r+') {|strio| ... }
  *
- * Equivalent to StringIO.new except that when it is called with a block, it
- * yields with the new instance and closes it, and returns the result which
- * returned from the block.
+ * Creates a new \StringIO instance formed from +string+ and +mode+;
+ * see {Access Modes}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Access+Modes].
+ *
+ * With no block, returns the new instance:
+ *
+ *   strio = StringIO.open # => #<StringIO>
+ *
+ * With a block, calls the block with the new instance
+ * and returns the block's value;
+ * closes the instance on block exit.
+ *
+ *   StringIO.open {|strio| p strio }
+ *   # => #<StringIO>
+ *
+ * Related: StringIO.new.
  */
 static VALUE
 strio_s_open(int argc, VALUE *argv, VALUE klass)
@@ -482,9 +504,17 @@ strio_unimpl(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- * call-seq: strio.string     -> string
+ * call-seq:
+ *   string -> string
  *
- * Returns underlying String object, the subject of IO.
+ * Returns underlying String object:
+ *
+ *   strio = StringIO.new('foo')
+ *   strio.string # => "foo"
+ *   strio.write('bar')
+ *   strio.string # => "bar"
+ *
+ * Related: StringIO#string= (assigns the underlying string).
  */
 static VALUE
 strio_get_string(VALUE self)
@@ -494,9 +524,16 @@ strio_get_string(VALUE self)
 
 /*
  * call-seq:
- *   strio.string = string  -> string
+ *   string = string -> string
  *
- * Changes underlying String object, the subject of IO.
+ * Assigns the underlying String object as +string+;
+ * returns +string+:
+ *
+ *   strio = StringIO.new('foo')
+ *   strio.string # => "foo"
+ *   strio.write('bar')
+ *   strio.string # => "bar"
+ *
  */
 static VALUE
 strio_set_string(VALUE self, VALUE string)
@@ -514,7 +551,10 @@ strio_set_string(VALUE self, VALUE string)
 
 /*
  * call-seq:
- *   strio.close  -> nil
+ *   close -> nil
+ *
+ * Closes +self+ for both reading and writing:
+ *
  *
  * Closes a StringIO. The stream is unavailable for any further data
  * operations; an +IOError+ is raised if such an attempt is made.
