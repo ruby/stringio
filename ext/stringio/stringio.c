@@ -532,7 +532,7 @@ strio_get_string(VALUE self)
  * call-seq:
  *   string = string -> string
  *
- * Assigns the underlying string as +string+;
+ * Assigns the underlying string as +string+, and sets position to zero;
  * returns +string+:
  *
  *   StringIO.open('foo') do |strio|
@@ -568,7 +568,9 @@ strio_set_string(VALUE self, VALUE string)
  *
  * Closes +self+ for both reading and writing.
  *
- * Related: StringIO#close_read, StringIO#close#write.
+ * Raises IOError if reading or writing is attempted.
+ *
+ * Related: StringIO#close_read, StringIO#close_write.
  */
 static VALUE
 strio_close(VALUE self)
@@ -584,7 +586,7 @@ strio_close(VALUE self)
  *
  * Closes +self+ for reading; closed-write setting remains unchanged.
  *
- * Related: StringIO#clase, StringIO#close_write.
+ * Related: StringIO#close, StringIO#close_write.
  */
 static VALUE
 strio_close_read(VALUE self)
@@ -603,7 +605,7 @@ strio_close_read(VALUE self)
  *
  * Closes +self+ for writing; closed-read setting remains unchanged.
  *
- * Related: StringIO#clase, StringIO#close_read.
+ * Related: StringIO#close, StringIO#close_read.
  */
 static VALUE
 strio_close_write(VALUE self)
@@ -671,7 +673,7 @@ strio_to_read(VALUE self)
  * call-seq:
  *   eof? -> true or false
  *
- * Returns +true+ if positioned at end-of-stream +false+ otherwise;
+ * Returns +true+ if positioned at end-of-stream, +false+ otherwise;
  * see {Position}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Position].
  *
  * StreamIO#eof is an alias for StreamIO#eof?.
