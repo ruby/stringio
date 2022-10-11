@@ -260,6 +260,8 @@ strio_s_allocate(VALUE klass)
  * call-seq:
  *   StringIO.new(string = '', mode = 'r+') -> new_stringio
  *
+ * Note that +mode+ defaults to <tt>'r'</tt> if +string+ is frozen.
+ *
  * Returns a new \StringIO instance formed from +string+ and +mode+;
  * see {Access Modes}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Access+Modes]:
  *
@@ -404,6 +406,8 @@ strio_finalize(VALUE self)
  * call-seq:
  *   StringIO.open(string = '', mode = 'r+') {|strio| ... }
  *
+ * Note that +mode+ defaults to <tt>'r'</tt> if +string+ is frozen.
+ *
  * Creates a new \StringIO instance formed from +string+ and +mode+;
  * see {Access Modes}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Access+Modes].
  *
@@ -530,10 +534,10 @@ strio_get_string(VALUE self)
 
 /*
  * call-seq:
- *   string = string -> string
+ *   string = other_string -> other_string
  *
- * Assigns the underlying string as +string+, and sets position to zero;
- * returns +string+:
+ * Assigns the underlying string as +other_string+, and sets position to zero;
+ * returns +other_string+:
  *
  *   StringIO.open('foo') do |strio|
  *     p strio.string
@@ -586,6 +590,8 @@ strio_close(VALUE self)
  *
  * Closes +self+ for reading; closed-write setting remains unchanged.
  *
+ * Raises IOError if reading is attempted.
+ *
  * Related: StringIO#close, StringIO#close_write.
  */
 static VALUE
@@ -604,6 +610,8 @@ strio_close_read(VALUE self)
  *   close_write -> nil
  *
  * Closes +self+ for writing; closed-read setting remains unchanged.
+ *
+ * Raises IOError if writing is attempted.
  *
  * Related: StringIO#close, StringIO#close_read.
  */
@@ -675,6 +683,8 @@ strio_to_read(VALUE self)
  *
  * Returns +true+ if positioned at end-of-stream, +false+ otherwise;
  * see {Position}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Position].
+ *
+ * Raises IOError if the stream is not opened for reading.
  *
  * StreamIO#eof is an alias for StreamIO#eof?.
  */
