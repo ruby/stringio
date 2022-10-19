@@ -1153,10 +1153,12 @@ strio_each_char(VALUE self)
 
 /*
  * call-seq:
- *   strio.each_codepoint {|c| block }  -> strio
- *   strio.each_codepoint               -> anEnumerator
+ *   each_codepoint {|codepoint| ... } -> self
  *
- * See IO#each_codepoint.
+ * With a block given, calls the block with each remaining codepoint in the stream;
+ * see {Codepoint IO}[https://docs.ruby-lang.org/en/master/io_streams_rdoc.html#label-Codepoint+IO].
+ *
+ * With no block given, returns an enumerator.
  */
 static VALUE
 strio_each_codepoint(VALUE self)
@@ -1366,11 +1368,13 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 
 /*
  * call-seq:
- *   strio.gets(sep=$/, chomp: false)     -> string or nil
- *   strio.gets(limit, chomp: false)      -> string or nil
- *   strio.gets(sep, limit, chomp: false) -> string or nil
+ *   gets(sep = $/, **line_opts) → string or nil
+ *   gets(limit, **line_opts) → string or nil
+ *   gets(sep, limit, **line_opts) → string or nil
  *
- * See IO#gets.
+ * Reads and returns a line from the stream;
+ * assigns the return value to <tt>$_</tt>;
+ * see {Line IO}[https://docs.ruby-lang.org/en/master/io_streams_rdoc.html#label-Line+IO].
  */
 static VALUE
 strio_gets(int argc, VALUE *argv, VALUE self)
@@ -1390,11 +1394,12 @@ strio_gets(int argc, VALUE *argv, VALUE self)
 
 /*
  * call-seq:
- *   strio.readline(sep=$/, chomp: false)     -> string
- *   strio.readline(limit, chomp: false)      -> string or nil
- *   strio.readline(sep, limit, chomp: false) -> string or nil
+ *   readline(sep = $/, **line_opts) → string
+ *   readline(limit, **line_opts) → string
+ *   readline(sep, limit, **line_opts) → string
  *
- * See IO#readline.
+ * Reads a line as with IO#gets, but raises EOFError if already at end-of-file;
+ * see {Line IO}[https://docs.ruby-lang.org/en/master/io_streams_rdoc.html#label-Line+IO].
  */
 static VALUE
 strio_readline(int argc, VALUE *argv, VALUE self)
@@ -1406,17 +1411,14 @@ strio_readline(int argc, VALUE *argv, VALUE self)
 
 /*
  * call-seq:
- *   strio.each(sep=$/, chomp: false) {|line| block }         -> strio
- *   strio.each(limit, chomp: false) {|line| block }          -> strio
- *   strio.each(sep, limit, chomp: false) {|line| block }     -> strio
- *   strio.each(...)                                          -> anEnumerator
+ *   each_line(sep = $/, **line_opts) {|line| ... }   -> self
+ *   each_line(limit, **line_opts) {|line| ... }      -> self
+ *   each_line(sep, limit, **line_opts) {|line| ... } -> self
  *
- *   strio.each_line(sep=$/, chomp: false) {|line| block }     -> strio
- *   strio.each_line(limit, chomp: false) {|line| block }      -> strio
- *   strio.each_line(sep, limit, chomp: false) {|line| block } -> strio
- *   strio.each_line(...)                                      -> anEnumerator
- *
- * See IO#each.
+ * Calls the block with each remaining line read from the stream;
+ * does nothing if already at end-of-file;
+ * returns +self+.
+ * See {Line IO}[https://docs.ruby-lang.org/en/master/io_streams_rdoc.html#label-Line+IO].
  */
 static VALUE
 strio_each(int argc, VALUE *argv, VALUE self)
