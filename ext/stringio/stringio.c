@@ -1368,9 +1368,9 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 
 /*
  * call-seq:
- *   gets(sep = $/, **line_opts) → string or nil
- *   gets(limit, **line_opts) → string or nil
- *   gets(sep, limit, **line_opts) → string or nil
+ *   gets(sep = $/, **line_opts) -> string or nil
+ *   gets(limit, **line_opts) -> string or nil
+ *   gets(sep, limit, **line_opts) -> string or nil
  *
  * Reads and returns a line from the stream;
  * assigns the return value to <tt>$_</tt>;
@@ -1394,9 +1394,9 @@ strio_gets(int argc, VALUE *argv, VALUE self)
 
 /*
  * call-seq:
- *   readline(sep = $/, **line_opts) → string
- *   readline(limit, **line_opts) → string
- *   readline(sep, limit, **line_opts) → string
+ *   readline(sep = $/, **line_opts) -> string
+ *   readline(limit, **line_opts) -> string
+ *   readline(sep, limit, **line_opts) -> string
  *
  * Reads a line as with IO#gets, but raises EOFError if already at end-of-file;
  * see {Line IO}[https://docs.ruby-lang.org/en/master/io_streams_rdoc.html#label-Line+IO].
