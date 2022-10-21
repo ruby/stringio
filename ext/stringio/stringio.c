@@ -1368,9 +1368,9 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 
 /*
  * call-seq:
- *   gets(sep = $/, **line_opts) -> string or nil
- *   gets(limit, **line_opts) -> string or nil
- *   gets(sep, limit, **line_opts) -> string or nil
+ *   gets(sep = $/, chomp: false) -> string or nil
+ *   gets(limit, chomp: false) -> string or nil
+ *   gets(sep, limit, chomp: false) -> string or nil
  *
  * Reads and returns a line from the stream;
  * assigns the return value to <tt>$_</tt>;
@@ -1394,9 +1394,9 @@ strio_gets(int argc, VALUE *argv, VALUE self)
 
 /*
  * call-seq:
- *   readline(sep = $/, **line_opts) -> string
- *   readline(limit, **line_opts) -> string
- *   readline(sep, limit, **line_opts) -> string
+ *   readline(sep = $/, chomp: false) -> string
+ *   readline(limit, chomp: false) -> string
+ *   readline(sep, limit, chomp: false) -> string
  *
  * Reads a line as with IO#gets, but raises EOFError if already at end-of-file;
  * see {Line IO}[https://docs.ruby-lang.org/en/master/io_streams_rdoc.html#label-Line+IO].
@@ -1411,14 +1411,16 @@ strio_readline(int argc, VALUE *argv, VALUE self)
 
 /*
  * call-seq:
- *   each_line(sep = $/, **line_opts) {|line| ... }   -> self
- *   each_line(limit, **line_opts) {|line| ... }      -> self
- *   each_line(sep, limit, **line_opts) {|line| ... } -> self
+ *   each_line(sep = $/, chomp: false) {|line| ... }   -> self
+ *   each_line(limit, chomp: false) {|line| ... }      -> self
+ *   each_line(sep, limit, chomp: false) {|line| ... } -> self
  *
  * Calls the block with each remaining line read from the stream;
  * does nothing if already at end-of-file;
  * returns +self+.
  * See {Line IO}[https://docs.ruby-lang.org/en/master/io_streams_rdoc.html#label-Line+IO].
+ *
+ * StringIO#each is an alias for StringIO#each_line.
  */
 static VALUE
 strio_each(int argc, VALUE *argv, VALUE self)
