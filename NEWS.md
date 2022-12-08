@@ -1,5 +1,12 @@
 # News
 
+## 3.0.4 - 2022-12-09
+
+### Improvements
+
+  * JRuby: Changed to use flag registry.
+    [[GitHub#33](https://github.com/ruby/stringio/pull/26)]
+
 ## 3.0.3 - 2022-12-08
 
 ### Improvements
