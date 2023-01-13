@@ -913,6 +913,11 @@ class TestStringIO < Test::Unit::TestCase
     $VERBOSE = verbose
   end
 
+  def test_to_io
+    s = StringIO.new("abc")
+    assert_equal(s.to_io, s)
+  end
+
   def assert_string(content, encoding, str, mesg = nil)
     assert_equal([content, encoding], [str, str.encoding], mesg)
   end

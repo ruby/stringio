@@ -1294,6 +1294,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return each_codepoint(context, block);
     }
 
+    @JRubyMethod(name = "to_io")
+    public IRubyObject to_io() {
+    	return this;
+    }
+
     public static class GenericReadable {
         @JRubyMethod(name = "readchar")
         public static IRubyObject readchar(ThreadContext context, IRubyObject self) {
