@@ -31,11 +31,11 @@ jobs:
       with:
         name: gem-${{ matrix.os }}-${{ matrix.ruby }}
         path: pkg/
+      id: upload
     - uses: softprops/action-gh-release@v1
       if: >-
         startsWith(github.ref, 'refs/tags/') &&
-          matrix.os == 'ubuntu-22.04' &&
-          (matrix.ruby == '3.1' || matrix.ruby == 'jruby-head')
+          steps.upload.outcome == 'success'
       with:
         files: |
           pkg/*.gem
