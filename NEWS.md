@@ -1,5 +1,15 @@
 # News
 
+## 3.0.5 - 2023-02-02
+
+### Improvements
+
+### Fixes
+
+  * Fixed a bug that `StringIO#gets("2+ character", chomp: true)` did not
+    remove the separator at the end.
+    [[Bug #19389](https://bugs.ruby-lang.org/issues/19389)]
+
 ## 3.0.4 - 2022-12-09
 
 ### Improvements
