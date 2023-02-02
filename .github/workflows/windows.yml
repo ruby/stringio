@@ -11,7 +11,7 @@ jobs:
       matrix:
         os:
         - windows-latest
-        ruby: [ '2.6', '2.7', '3.0', '3.1', 'mswin', 'mingw' ]
+        ruby: [ '2.7', '3.0', '3.1', '3.2', 'mswin', 'mingw' ]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Ruby
