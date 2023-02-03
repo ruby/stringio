@@ -18,6 +18,15 @@ class << (helper = Bundler::GemHelper.instance)
   end
 
   def version=(v)
+    unless v == version
+      news = File.read(File.join(__dir__, "../NEWS.md"))
+      unless /^## +#{Regexp.quote(version.to_s)} -/ =~ news
+        abort "Previous version #{version} is not mentioned in NEWS.md"
+      end
+      unless already_tagged?
+        abort "Previous version #{version} is not tagged yet"
+      end
+    end
     gemspec.version = v
     update_source_version
     commit_bump
