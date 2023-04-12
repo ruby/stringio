@@ -137,6 +137,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 0, 2);
+
         if (ptr == null) {
             ptr = new StringIOData();
         }
@@ -865,7 +867,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     }
                     break;
                 default:
-                    throw runtime.newArgumentError(args.length, 0);
+                    throw runtime.newArgumentError(args.length, 0, 2);
             }
 
             if (str.isNil()) {
@@ -930,11 +932,13 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     // MRI: strio_reopen
-    @JRubyMethod(name = "reopen", required = 0, optional = 2)
+    @JRubyMethod(name = "reopen", optional = 2)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
         checkFrozen();
 
-        if (args.length == 1 && !(args[0] instanceof RubyString)) {
+        if (argc == 1 && !(args[0] instanceof RubyString)) {
             return initialize_copy(context, args[0]);
         }
 
@@ -959,6 +963,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(required = 1, optional = 1)
     public IRubyObject seek(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+
         Ruby runtime = context.runtime;
 
         checkFrozen();
@@ -967,7 +973,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         int offset = RubyNumeric.num2int(args[0]);
         IRubyObject whence = context.nil;
 
-        if (args.length > 1 && !args[0].isNil()) whence = args[1];
+        if (argc > 1 && !args[0].isNil()) whence = args[1];
 
         checkOpen();
 
@@ -1163,6 +1169,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = "write", required = 1, rest = true)
     public IRubyObject write(ThreadContext context, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, -1);
+
         Ruby runtime = context.runtime;
         long len = 0;
         for (IRubyObject arg : args) {
@@ -1333,12 +1341,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         @JRubyMethod(name = "read_nonblock", required = 1, optional = 2)
         public static IRubyObject read_nonblock(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            int argc = Arity.checkArgumentCount(context, args, 1, 3);
+
             final Ruby runtime = context.runtime;
 
             boolean exception = true;
             IRubyObject opts = ArgsUtil.getOptionsArg(runtime, args);
             if (opts != context.nil) {
-                args = ArraySupport.newCopy(args, args.length - 1);
+                args = ArraySupport.newCopy(args, argc - 1);
                 exception = Helpers.extractExceptionOnlyArg(context, (RubyHash) opts);
             }
 
@@ -1431,6 +1441,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         @JRubyMethod(name = "write_nonblock", required = 1, optional = 1)
         public static IRubyObject syswrite_nonblock(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            Arity.checkArgumentCount(context, args, 1, 2);
+
             Ruby runtime = context.runtime;
 
             ArgsUtil.getOptionsArg(runtime, args); // ignored as in MRI
