@@ -158,7 +158,19 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         StringIOData ptr = this.ptr;
 
         synchronized (ptr) {
-            switch (args.length) {
+            int argc = args.length;
+            Encoding encoding = null;
+
+            IRubyObject options = ArgsUtil.getOptionsArg(runtime, args);
+            if (!options.isNil()) {
+                argc--;
+                IRubyObject encodingOpt = ArgsUtil.extractKeywordArg(context, "encoding", (RubyHash) options);
+                if (!encodingOpt.isNil()) {
+                    encoding = EncodingUtils.toEncoding(context, encodingOpt);
+                }
+            }
+
+            switch (argc) {
                 case 2:
                     mode = args[1];
                     final boolean trunc;
@@ -192,7 +204,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             }
 
             ptr.string = string;
-            ptr.enc = null;
+            ptr.enc = encoding;
             ptr.pos = 0;
             ptr.lineno = 0;
             // funky way of shifting readwrite flags into object flags
