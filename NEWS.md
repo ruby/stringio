@@ -1,5 +1,19 @@
 # News
 
+## 3.0.6 - 2023-04-14
+
+### Improvements
+
+  * CRuby: Added support for write barrier.
+
+  * JRuby: Added missing arty-checking.
+
+    GH-48
+
+  * JRuby: Added support for `StringIO.new(encoding:)`.
+
+    GH-45
+
 ## 3.0.5 - 2023-02-02
 
 ### Improvements
