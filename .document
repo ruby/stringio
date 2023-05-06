@@ -1,0 +1,4 @@
+COPYING
+*.md
+*.txt
+ext/
