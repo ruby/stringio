@@ -1,5 +1,12 @@
 # News
 
+## 3.0.7 - 2023-06-02
+
+  * CRuby: Avoid direct struct usage. This change is for supporting
+    Ruby 3.3.
+
+    GH-54
+
 ## 3.0.6 - 2023-04-14
 
 ### Improvements
