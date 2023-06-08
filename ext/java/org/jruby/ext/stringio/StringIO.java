@@ -907,6 +907,68 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return string;
     }
 
+    @JRubyMethod(name = "pread", required = 2, optional = 1)
+    public IRubyObject pread(ThreadContext context, IRubyObject[] args) {
+        checkReadable();
+
+        final Ruby runtime = context.runtime;
+        IRubyObject str = context.nil;
+        int len;
+        int offset;
+
+        StringIOData ptr = this.ptr;
+        final RubyString string;
+
+        switch (args.length) {
+            case 3:
+                str = args[2];
+                if (!str.isNil()) {
+                    str = str.convertToString();
+                    ((RubyString) str).modify();
+                }
+            case 2:
+                len = RubyNumeric.fix2int(args[0]);
+                offset = RubyNumeric.fix2int(args[1]);
+                if (!args[0].isNil()) {
+                    len = RubyNumeric.fix2int(args[0]);
+
+                    if (len < 0) {
+                        throw runtime.newArgumentError("negative length " + len + " given");
+                    }
+
+                    if (offset < 0) {
+                        throw runtime.newErrnoEINVALError("pread: Invalid offset argument");
+                    }
+                }
+                break;
+            default:
+                throw runtime.newArgumentError(args.length, 0, 2);
+        }
+
+        synchronized (ptr) {
+            if (offset >= ptr.string.size()) {
+                throw context.runtime.newEOFError();
+            }
+
+            if (str.isNil()) {
+                return strioSubstr(runtime, offset, len, ASCIIEncoding.INSTANCE);
+            }
+
+            string = (RubyString) str;
+            int rest = ptr.string.size() - offset;
+            if (len > rest) len = rest;
+            string.resize(len);
+            ByteList strByteList = string.getByteList();
+            byte[] strBytes = strByteList.getUnsafeBytes();
+            ByteList dataByteList = ptr.string.getByteList();
+            byte[] dataBytes = dataByteList.getUnsafeBytes();
+            System.arraycopy(dataBytes, dataByteList.getBegin() + offset, strBytes, strByteList.getBegin(), len);
+            string.setEncoding(ASCIIEncoding.INSTANCE);
+        }
+
+        return string;
+    }
+
     @JRubyMethod(name = "readlines")
     public IRubyObject readlines(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding());
