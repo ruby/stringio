@@ -4,3 +4,5 @@ if RUBY_ENGINE == 'jruby'
 else
   require 'stringio.so'
 end
+
+require 'stringio/version'

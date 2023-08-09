@@ -1,15 +1,10 @@
 # -*- coding: utf-8 -*-
 # frozen_string_literal: true
 
-source_version = ["", "ext/stringio/"].find do |dir|
-  begin
-    break File.open(File.join(__dir__, "#{dir}stringio.c")) {|f|
-      f.gets("\n#define STRINGIO_VERSION ")
-      f.gets[/\s*"(.+)"/, 1]
-    }
-  rescue Errno::ENOENT
-  end
-end
+source_version = File.open("lib/stringio/version.rb") {|f|
+  f.gets("\n  VERSION = ")
+  f.gets[/\s*"(.+)"/, 1]
+}
 Gem::Specification.new do |s|
   s.name = "stringio"
   s.version = source_version
@@ -18,10 +13,10 @@ Gem::Specification.new do |s|
   s.authors = ["Nobu Nakada", "Charles Oliver Nutter"]
   s.description = "Pseudo `IO` class from/to `String`."
   s.email = ["nobu@ruby-lang.org", "headius@headius.com"]
-  s.files = ["README.md"]
+  s.files = ["README.md", "lib/stringio.rb", "lib/stringio/version.rb"]
   jruby = true if Gem::Platform.new('java') =~ s.platform or RUBY_ENGINE == 'jruby'
   if jruby
-    s.files += ["lib/stringio.rb", "lib/stringio.jar"]
+    s.files += ["lib/stringio.jar"]
     s.platform = "java"
   else
     s.extensions = ["ext/stringio/extconf.rb"]
