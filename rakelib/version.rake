@@ -13,7 +13,8 @@ class << (helper = Bundler::GemHelper.instance)
 
   def commit_bump
     sh([*%w[git commit -m], "Development of #{gemspec.version} started.",
-        SOURCE_PATH])
+        C_SOURCE_PATH,
+        JAVA_SOURCE_PATH])
   end
 
   def version=(v)
