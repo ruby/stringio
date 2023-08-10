@@ -1,5 +1,23 @@
 # News
 
+## 3.0.8 - 2023-08-10
+
+### Improvements
+
+  * Added `StringIO#pread`.
+
+    Patch by Jean byroot Boussier.
+
+    GH-56
+
+  * JRuby: Added `StringIO::VERSION`.
+
+    GH-57 GH-59
+
+### Thanks
+
+  * Jean byroot Boussier
+
 ## 3.0.7 - 2023-06-02
 
   * CRuby: Avoid direct struct usage. This change is for supporting
