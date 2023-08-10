@@ -83,7 +83,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         RubyClass stringIOClass = runtime.defineClass(
                 "StringIO", runtime.getObject(), StringIO::new);
 
-        RubyString version = RubyString.newString(runtime, "3.0.8");
+        RubyString version = RubyString.newString(runtime, "3.0.9");
         stringIOClass.defineConstant("VERSION", version);
 
         stringIOClass.defineAnnotatedMethods(StringIO.class);
