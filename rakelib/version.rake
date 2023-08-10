@@ -1,15 +1,14 @@
 class << (helper = Bundler::GemHelper.instance)
-  SOURCE_PATH = "ext/stringio/stringio.c"
+  C_SOURCE_PATH = "ext/stringio/stringio.c"
+  JAVA_SOURCE_PATH = "ext/java/org/jruby/ext/stringio/StringIO.java"
   def update_source_version
-    path = SOURCE_PATH
-    File.open(path, "r+b") do |f|
-      d = f.read
-      if d.sub!(/^#define\s+STRINGIO_VERSION\s+\K".*"/) {version.to_s.dump}
-        f.rewind
-        f.truncate(0)
-        f.print(d)
-      end
-    end
+    c_source = File.read(C_SOURCE_PATH)
+    c_source.sub!(/^#define\s+STRINGIO_VERSION\s+\K".*"/) {version.to_s.dump}
+    File.write(C_SOURCE_PATH, c_source)
+
+    java_source = File.read(JAVA_SOURCE_PATH)
+    java_source.sub!(/version = RubyString\.newString\(runtime, \K".*"/) {version.to_s.dump}
+    File.write(JAVA_SOURCE_PATH, java_source)
   end
 
   def commit_bump
