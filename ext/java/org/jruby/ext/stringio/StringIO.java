@@ -599,6 +599,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 return RubyString.newEmptyString(context.runtime, self.getEncoding());
             }
 
+            if (rs.isNil()) chomp = false;
+
             IRubyObject result = self.getline(context, rs, limit, chomp);
 
             context.setLastLine(result);
@@ -615,6 +617,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (limit == 0) {
                 throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
             }
+
+            if (rs.isNil()) chomp = false;
 
             while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
                 block.yieldSpecific(context, line);
@@ -633,6 +637,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (limit == 0) {
                 throw context.runtime.newArgumentError("invalid limit: 0 for readlines");
             }
+
+            if (rs.isNil()) chomp = false;
 
             while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
                 ary.append(line);
