@@ -599,6 +599,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 return RubyString.newEmptyString(context.runtime, self.getEncoding());
             }
 
+            if (rs.isNil()) chomp = false;
+
             IRubyObject result = self.getline(context, rs, limit, chomp);
 
             context.setLastLine(result);
@@ -615,6 +617,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (limit == 0) {
                 throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
             }
+
+            if (rs.isNil()) chomp = false;
 
             while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
                 block.yieldSpecific(context, line);
@@ -633,6 +637,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (limit == 0) {
                 throw context.runtime.newArgumentError("invalid limit: 0 for readlines");
             }
+
+            if (rs.isNil()) chomp = false;
 
             while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
                 ary.append(line);
@@ -677,12 +683,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 }
                 str = strioSubstr(runtime, ptr.pos, e - s - w, enc);
             } else if ((n = ((RubyString) rs).size()) == 0) {
-                // this is not an exact port; the original confused me
-                // in MRI, the next loop appears to have a complicated boolean to determine the index, but in actuality
-                // it just resolves to p (+ 0) as below. We theorize that the MRI logic may have originally been
-                // intended to skip all \n and \r, but because p does not get incremented before the \r check that
-                // logic never fires. We use the original logic that did not have these strange flaws.
-                // See https://github.com/ruby/ruby/commit/30540c567569d3486ccbf59b59d903d5778f04d5
+                int paragraph_end = 0;
                 p = s;
                 while (stringBytes[p] == '\n') {
                     if (++p == e) {
@@ -691,22 +692,21 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 }
                 s = p;
                 while ((p = StringSupport.memchr(stringBytes, p, '\n', e - p)) != -1 && (p != e)) {
-                    p += 1;
-                    if (p == e) break;
-
-                    if (stringBytes[p] == '\n') {
-                        e = p + 1;
-                        w = (chomp ? 1 : 0);
-                        break;
+                    p++;
+                    if (!((p < e && stringBytes[p] == '\n') ||
+                            (p + 1 < e && stringBytes[p] == '\r' && stringBytes[p+1] == '\n'))) {
+                        continue;
                     }
-            	    else if (stringBytes[p] == '\r' && p < e && stringBytes[p + 1] == '\n') {
-                        e = p + 2;
-                        w = (chomp ? 2 : 0);
-                        break;
+                    paragraph_end = p - ((stringBytes[p-2] == '\r') ? 2 : 1);
+                    while ((p < e && stringBytes[p] == '\n') ||
+                    (p + 1 < e && stringBytes[p] == '\r' && stringBytes[p+1] == '\n')) {
+                        p += (stringBytes[p] == '\r') ? 2 : 1;
                     }
+                    e = p;
+                    break;
                 }
-                if (w == 0 && chomp) {
-                    w = chompNewlineWidth(stringBytes, s, e);
+                if (chomp && paragraph_end != 0) {
+                    w = e - paragraph_end;
                 }
                 str = strioSubstr(runtime, s - begin, e - s - w, enc);
             } else if (n == 1) {
@@ -718,17 +718,28 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 }
                 str = strioSubstr(runtime, ptr.pos, e - s - w, enc);
             } else {
-                if (n < e - s) {
+                if (n < e - s + (chomp ? 1 : 0)) {
                     RubyString rsStr = (RubyString) rs;
                     ByteList rsByteList = rsStr.getByteList();
                     byte[] rsBytes = rsByteList.getUnsafeBytes();
 
-                    int[] skip = new int[1 << CHAR_BIT];
-                    int pos;
-                    p = rsByteList.getBegin();
-                    bm_init_skip(skip, rsBytes, p, n);
-                    if ((pos = bm_search(rsBytes, p, n, stringBytes, s, e - s, skip)) >= 0) {
-                        e = s + pos + n;
+                    /* unless chomping, RS at the end does not matter */
+                    if (e - s < 1024 || n == e - s) {
+                        for (p = s; p + n <= e; ++p) {
+                            if (ByteList.memcmp(stringBytes, p, rsBytes, 0, n) == 0) {
+                                e = p + n;
+                                w = (chomp ? n : 0);
+                                break;
+                            }
+                        }
+                    } else {
+                        int[] skip = new int[1 << CHAR_BIT];
+                        int pos;
+                        p = rsByteList.getBegin();
+                        bm_init_skip(skip, rsBytes, p, n);
+                        if ((pos = bm_search(rsBytes, p, n, stringBytes, s, e - s, skip)) >= 0) {
+                            e = s + pos + n;
+                        }
                     }
                 }
                 str = strioSubstr(runtime, ptr.pos, e - s - w, enc);
