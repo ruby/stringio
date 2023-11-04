@@ -75,6 +75,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
     StringIOData ptr;
 
+    private static final String
+    STRINGIO_VERSION = "3.0.9";
+
     private static final int STRIO_READABLE = ObjectFlags.registry.newFlag(StringIO.class);
     private static final int STRIO_WRITABLE = ObjectFlags.registry.newFlag(StringIO.class);
     private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
@@ -83,7 +86,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         RubyClass stringIOClass = runtime.defineClass(
                 "StringIO", runtime.getObject(), StringIO::new);
 
-        RubyString version = RubyString.newString(runtime, "3.0.9");
+        RubyString version = RubyString.newString(runtime, STRINGIO_VERSION);
         stringIOClass.defineConstant("VERSION", version);
 
         stringIOClass.defineAnnotatedMethods(StringIO.class);
