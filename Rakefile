@@ -11,6 +11,8 @@ if RUBY_PLATFORM =~ /java/
     ext.target_version = '1.8'
     ext.ext_dir = 'ext/java'
   end
+
+  task :build => "#{extask.lib_dir}/#{extask.name}.jar"
 else
   require 'rake/extensiontask'
   extask = Rake::ExtensionTask.new(name) do |x|
