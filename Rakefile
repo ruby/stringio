@@ -6,7 +6,7 @@ name = "stringio"
 if RUBY_PLATFORM =~ /java/
   require 'rake/javaextensiontask'
   extask = Rake::JavaExtensionTask.new("stringio") do |ext|
-    require 'maven/ruby/maven'
+    ext.lib_dir << "/#{ext.platform}"
     ext.source_version = '1.8'
     ext.target_version = '1.8'
     ext.ext_dir = 'ext/java'
