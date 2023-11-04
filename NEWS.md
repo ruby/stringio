@@ -1,5 +1,15 @@
 # News
 
+## 3.0.9 - 2023-11-04
+
+### Fixes
+
+  * Fixed `StringIO#pread` with the length 0.
+
+    Patch by Jean byroot Boussier.
+
+    GH-67
+
 ## 3.0.8 - 2023-08-10
 
 ### Improvements
