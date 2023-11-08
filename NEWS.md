@@ -1,14 +1,33 @@
 # News
 
-## 3.0.9 - 2023-11-04
+## 3.0.9 - 2023-11-08
+
+### Improvements
+
+  * JRuby: Aligned `StringIO#gets` behavior with the C implementation.
+
+    GH-61
 
 ### Fixes
 
-  * Fixed `StringIO#pread` with the length 0.
+  * CRuby: Fixed `StringIO#pread` with the length 0.
 
     Patch by Jean byroot Boussier.
 
     GH-67
+
+  * CRuby: Fixed a bug that `StringIO#gets` with non ASCII compatible
+    encoding such as UTF-16 doesn't detect correct new line characters.
+
+    Reported by IWAMOTO Kouichi.
+
+    GH-68
+
+### Thanks
+
+  * Jean byroot Boussier
+
+  * IWAMOTO Kouichi
 
 ## 3.0.8 - 2023-08-10
 
