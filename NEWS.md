@@ -1,5 +1,13 @@
 # News
 
+## 3.1.0 - 2023-11-27
+
+### Fixes
+
+  * TruffleRuby: Do not compile the C extension
+
+    GH-71
+
 ## 3.0.9 - 2023-11-08
 
 ### Improvements
