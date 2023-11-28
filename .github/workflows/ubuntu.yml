@@ -12,7 +12,7 @@ jobs:
         os:
         - ubuntu-22.04
         - ubuntu-20.04
-        ruby: [ '2.7', '3.0', '3.1', '3.2', 'debug', 'head', 'jruby-head' ]
+        ruby: [ '2.7', '3.0', '3.1', '3.2', 'debug', 'head', 'jruby-head', 'truffleruby-head' ]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Ruby
@@ -42,5 +42,12 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
     - name: Run test
+      # Tests don't pass yet on truffleruby
+      if: >-
+        matrix.ruby != 'truffleruby-head'
       run: bundle exec rake
       continue-on-error: ${{ startsWith(matrix.ruby, 'jruby') }}
+    - name: Install gem
+      run: |
+        gem install pkg/*.gem
+        ruby -rstringio -e 'puts StringIO::VERSION'
