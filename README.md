@@ -12,7 +12,7 @@ This library is based on MoonWolf version written in Ruby.  Thanks a lot.
 
 * `fileno` raises `NotImplementedError`.
 * encoding conversion is not implemented, and ignored silently.
-* there is no `#to_io` method because this is not an `IO.
+* there is no `#to_io` method because this is not an `IO`.
 
 ## Installation
 
