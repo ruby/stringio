@@ -23,7 +23,7 @@ jobs:
       run: bundle exec rake compile
     - name: Build gem
       run: bundle exec rake build
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: >-
         matrix.os == 'macos-11.0' &&
           matrix.ruby == '3.2'
