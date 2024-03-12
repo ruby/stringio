@@ -64,6 +64,7 @@ import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 @JRubyClass(name="StringIO")
+@SuppressWarnings("serial")
 public class StringIO extends RubyObject implements EncodingCapable, DataType {
     static class StringIOData {
         /**
@@ -598,60 +599,52 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
     }
 
-    private static final Getline.Callback<StringIO, IRubyObject> GETLINE = new Getline.Callback<StringIO, IRubyObject>() {
-        @Override
-        public IRubyObject getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            if (limit == 0) {
-                return RubyString.newEmptyString(context.runtime, self.getEncoding());
-            }
-
-            if (rs.isNil()) chomp = false;
-
-            IRubyObject result = self.getline(context, rs, limit, chomp);
-
-            context.setLastLine(result);
-
-            return result;
+    private static final Getline.Callback<StringIO, IRubyObject> GETLINE = (context, self, rs, limit, chomp, block) -> {
+        if (limit == 0) {
+            return RubyString.newEmptyString(context.runtime, self.getEncoding());
         }
+
+        if (rs.isNil()) chomp = false;
+
+        IRubyObject result = self.getline(context, rs, limit, chomp);
+
+        context.setLastLine(result);
+
+        return result;
     };
 
-    private static final Getline.Callback<StringIO, StringIO> GETLINE_YIELD = new Getline.Callback<StringIO, StringIO>() {
-        @Override
-        public StringIO getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            IRubyObject line;
+    private static final Getline.Callback<StringIO, StringIO> GETLINE_YIELD = (context, self, rs, limit, chomp, block) -> {
+        IRubyObject line;
 
-            if (limit == 0) {
-                throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
-            }
-
-            if (rs.isNil()) chomp = false;
-
-            while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
-                block.yieldSpecific(context, line);
-            }
-
-            return self;
+        if (limit == 0) {
+            throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
         }
+
+        if (rs.isNil()) chomp = false;
+
+        while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
+            block.yieldSpecific(context, line);
+        }
+
+        return self;
     };
 
-    private static final Getline.Callback<StringIO, RubyArray> GETLINE_ARY = new Getline.Callback<StringIO, RubyArray>() {
-        @Override
-        public RubyArray getline(ThreadContext context, StringIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            RubyArray ary = context.runtime.newArray();
-            IRubyObject line;
+    private static final Getline.Callback<StringIO, RubyArray<IRubyObject>> GETLINE_ARY = (context, self, rs, limit, chomp, block) -> {
+        @SuppressWarnings("unchecked")
+        RubyArray<IRubyObject> ary = (RubyArray<IRubyObject>) context.runtime.newArray();
+        IRubyObject line;
 
-            if (limit == 0) {
-                throw context.runtime.newArgumentError("invalid limit: 0 for readlines");
-            }
-
-            if (rs.isNil()) chomp = false;
-
-            while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
-                ary.append(line);
-            }
-
-            return ary;
+        if (limit == 0) {
+            throw context.runtime.newArgumentError("invalid limit: 0 for readlines");
         }
+
+        if (rs.isNil()) chomp = false;
+
+        while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
+            ary.append(line);
+        }
+
+        return ary;
     };
 
     // strio_getline
@@ -850,6 +843,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public static final ByteList NEWLINE = ByteList.create("\n");
 
     @JRubyMethod(name = "read", optional = 2)
+    @SuppressWarnings("fallthrough")
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
@@ -928,6 +922,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     @JRubyMethod(name = "pread", required = 2, optional = 1)
+    @SuppressWarnings("fallthrough")
     public IRubyObject pread(ThreadContext context, IRubyObject[] args) {
         checkReadable();
 
@@ -1512,7 +1507,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (!args[i].isNil()) {
                     IRubyObject tmp = args[i].checkArrayType();
                     if (!tmp.isNil()) {
-                        RubyArray arr = (RubyArray) tmp;
+                        @SuppressWarnings("unchecked")
+                        RubyArray<IRubyObject> arr = (RubyArray<IRubyObject>) tmp;
                         if (runtime.isInspecting(arr)) {
                             line = runtime.newString("[...]");
                         } else {
@@ -1538,7 +1534,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             return runtime.getNil();
         }
 
-        private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray array) {
+        private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray<IRubyObject> array) {
             Ruby runtime = context.runtime;
             try {
                 runtime.registerInspecting(array);
