@@ -1299,7 +1299,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
                     EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
                 } else {
-                    ptr.string.cat19(str);
+                    ptr.string.catWithCodeRange(str);
                 }
             } else {
                 strioExtend(ptr.pos, len);
