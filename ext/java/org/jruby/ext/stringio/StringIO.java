@@ -55,6 +55,9 @@ import org.jruby.util.io.Getline;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.Arrays;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
@@ -1270,6 +1273,23 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return RubyFixnum.newFixnum(runtime, len);
     }
 
+    private static final MethodHandle CAT_WITH_CODE_RANGE;
+
+    static {
+        MethodHandle cat;
+        try {
+            cat = MethodHandles.publicLookup().findVirtual(RubyString.class, "catWithCodeRange", MethodType.methodType(RubyString.class, RubyString.class));
+        } catch (NoSuchMethodException | IllegalAccessException ex) {
+            try {
+                cat = MethodHandles.publicLookup().findVirtual(RubyString.class, "cat19", MethodType.methodType(RubyString.class, RubyString.class));
+            } catch (NoSuchMethodException | IllegalAccessException ex2) {
+                throw new ExceptionInInitializerError(ex2);
+            }
+        }
+
+        CAT_WITH_CODE_RANGE = cat;
+    }
+
     // MRI: strio_write
     private long stringIOWrite(ThreadContext context, Ruby runtime, IRubyObject arg) {
         checkWritable();
@@ -1299,7 +1319,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
                     EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
                 } else {
-                    ptr.string.catWithCodeRange(str);
+                    try {
+                        RubyString unused = (RubyString) CAT_WITH_CODE_RANGE.invokeExact(ptr.string, str);
+                    } catch (Throwable t) {
+                        throw new RuntimeException(t);
+                    }
                 }
             } else {
                 strioExtend(ptr.pos, len);
