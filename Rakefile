@@ -37,6 +37,7 @@ Rake::TestTask.new(:test) do |t|
 end
 
 RDoc::Task.new do |rdoc|
+  rdoc.rdoc_files.concat(Bundler::GemHelper.instance.gemspec.extra_rdoc_files)
 end
 
 task :default => :test
