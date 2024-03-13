@@ -259,7 +259,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return this;
     }
 
-    @JRubyMethod(name = {"fcntl"}, rest = true)
+    @JRubyMethod(name = {"fcntl"}, rest = true, notImplemented = true)
     public IRubyObject strio_unimpl(ThreadContext context, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("");
     }
