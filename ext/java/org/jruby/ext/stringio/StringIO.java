@@ -38,6 +38,7 @@ import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -63,6 +64,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.util.RubyStringBuilder.str;
+import static org.jruby.util.RubyStringBuilder.types;
 
 @JRubyClass(name="StringIO")
 @SuppressWarnings("serial")
@@ -128,12 +131,95 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return RubyIO.newInstance(context, recv, args, block);
+        RubyClass klass = (RubyClass) recv;
+
+        warnIfBlock(context, block, klass);
+
+        return klass.newInstance(context, args, block);
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, Block block) {
+        RubyClass klass = (RubyClass) recv;
+
+        warnIfBlock(context, block, klass);
+
+        return klass.newInstance(context, block);
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        RubyClass klass = (RubyClass) recv;
+
+        warnIfBlock(context, block, klass);
+
+        return klass.newInstance(context, arg0, block);
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RubyClass klass = (RubyClass) recv;
+
+        warnIfBlock(context, block, klass);
+
+        return klass.newInstance(context, arg0, arg1, block);
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        RubyClass klass = (RubyClass) recv;
+
+        warnIfBlock(context, block, klass);
+
+        return klass.newInstance(context, arg0, arg1, arg2, block);
+    }
+
+    private static void warnIfBlock(ThreadContext context, Block block, RubyClass klass) {
+        if (block.isGiven()) {
+            Ruby runtime = context.runtime;
+            IRubyObject className = types(runtime, klass);
+
+            runtime.getWarnings().warn(IRubyWarnings.ID.BLOCK_NOT_ACCEPTED,
+                    str(runtime, className, "::new() does not take block; use ", className, "::open() instead"));
+        }
     }
 
     @JRubyMethod(meta = true, rest = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         StringIO strio = (StringIO)((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
+
+        return yieldOrReturn(context, block, strio);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, Block block) {
+        StringIO strio = (StringIO)((RubyClass)recv).newInstance(context, Block.NULL_BLOCK);
+
+        return yieldOrReturn(context, block, strio);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject arg0, Block block) {
+        StringIO strio = (StringIO)((RubyClass)recv).newInstance(context, arg0, Block.NULL_BLOCK);
+
+        return yieldOrReturn(context, block, strio);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
+        StringIO strio = (StringIO)((RubyClass)recv).newInstance(context, arg0, arg1, Block.NULL_BLOCK);
+
+        return yieldOrReturn(context, block, strio);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        StringIO strio = (StringIO)((RubyClass)recv).newInstance(context, arg0, arg1, arg2, Block.NULL_BLOCK);
+
+        return yieldOrReturn(context, block, strio);
+    }
+
+    private static IRubyObject yieldOrReturn(ThreadContext context, Block block, StringIO strio) {
         IRubyObject val = strio;
 
         if (block.isGiven()) {
@@ -144,6 +230,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 strio.flags &= ~STRIO_READWRITE;
             }
         }
+
         return val;
     }
 
@@ -151,22 +238,44 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         super(runtime, klass);
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 0, 2);
-
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context) {
         if (ptr == null) {
             ptr = new StringIOData();
         }
 
         // does not dispatch quite right and is not really necessary for us
         //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        strioInit(context, args);
+        strioInit(context, 0, null, null);
+        return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
+        if (ptr == null) {
+            ptr = new StringIOData();
+        }
+
+        // does not dispatch quite right and is not really necessary for us
+        //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        strioInit(context, 1, arg0, null);
+        return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        if (ptr == null) {
+            ptr = new StringIOData();
+        }
+
+        // does not dispatch quite right and is not really necessary for us
+        //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        strioInit(context, 2, arg0, arg1);
         return this;
     }
 
     // MRI: strio_init
-    private void strioInit(ThreadContext context, IRubyObject[] args) {
+    private void strioInit(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
         RubyString string;
         IRubyObject mode;
@@ -175,10 +284,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         lock(ptr);
         try {
-            int argc = args.length;
+            IRubyObject maybeOptions = context.nil;
+            switch (argc) {
+                case 1:
+                    maybeOptions = arg0;
+                    break;
+                case 2:
+                    maybeOptions = arg1;
+                    break;
+            }
             Encoding encoding = null;
 
-            IRubyObject options = ArgsUtil.getOptionsArg(runtime, args);
+            IRubyObject options = ArgsUtil.getOptionsArg(runtime, maybeOptions);
             if (!options.isNil()) {
                 argc--;
                 IRubyObject encodingOpt = ArgsUtil.extractKeywordArg(context, "encoding", (RubyHash) options);
@@ -189,18 +306,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
             switch (argc) {
                 case 2:
-                    mode = args[1];
+                    mode = arg1;
                     final boolean trunc;
                     if (mode instanceof RubyFixnum) {
                         int flags = RubyFixnum.fix2int(mode);
                         ptr.flags = ModeFlags.getOpenFileFlagsFor(flags);
                         trunc = (flags & ModeFlags.TRUNC) != 0;
                     } else {
-                        String m = args[1].convertToString().toString();
+                        String m = arg1.convertToString().toString();
                         ptr.flags = OpenFile.ioModestrFmode(runtime, m);
                         trunc = m.length() > 0 && m.charAt(0) == 'w';
                     }
-                    string = args[0].convertToString();
+                    string = arg0.convertToString();
                     if ((ptr.flags & OpenFile.WRITABLE) != 0 && string.isFrozen()) {
                         throw runtime.newErrnoEACCESError("Permission denied");
                     }
@@ -209,7 +326,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     }
                     break;
                 case 1:
-                    string = args[0].convertToString();
+                    string = arg0.convertToString();
                     ptr.flags = string.isFrozen() ? OpenFile.READABLE : OpenFile.READWRITE;
                     break;
                 case 0:
@@ -217,7 +334,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     ptr.flags = OpenFile.READWRITE;
                     break;
                 default:
-                    throw runtime.newArgumentError(args.length, 2);
+                    // should not be possible
+                    throw runtime.newArgumentError(3, 2);
             }
 
             ptr.string = string;
@@ -858,32 +976,46 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     public static final ByteList NEWLINE = ByteList.create("\n");
 
-    @JRubyMethod(name = "read", optional = 2)
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context) {
+        return readCommon(context, 0, null, null);
+    }
+
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context, IRubyObject arg0) {
+        return readCommon(context, 1, arg0, null);
+    }
+
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return readCommon(context, 2, arg0, arg1);
+    }
+
     @SuppressWarnings("fallthrough")
-    public IRubyObject read(ThreadContext context, IRubyObject[] args) {
+    private IRubyObject readCommon(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1) {
         checkReadable();
 
-        final Ruby runtime = context.runtime;
-        IRubyObject str = context.nil;
-        int len;
-        boolean binary = false;
+        Ruby runtime = context.runtime;
 
+        IRubyObject str = context.nil;
+        boolean binary = false;
         StringIOData ptr = this.ptr;
         int pos = ptr.pos;
-        final RubyString string;
 
         lock(ptr);
         try {
-            switch (args.length) {
+            int len;
+            final RubyString string;
+            switch (argc) {
                 case 2:
-                    str = args[1];
+                    str = arg1;
                     if (!str.isNil()) {
                         str = str.convertToString();
                         ((RubyString) str).modify();
                     }
                 case 1:
-                    if (!args[0].isNil()) {
-                        len = RubyNumeric.fix2int(args[0]);
+                    if (!arg0.isNil()) {
+                        len = RubyNumeric.fix2int(arg0);
 
                         if (len < 0) {
                             throw runtime.newArgumentError("negative length " + len + " given");
@@ -911,7 +1043,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     }
                     break;
                 default:
-                    throw runtime.newArgumentError(args.length, 0, 2);
+                    throw runtime.newArgumentError(argc, 0, 2);
             }
 
             if (str.isNil()) {
@@ -934,39 +1066,52 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     string.setEncoding(myString.getEncoding());
                 }
             }
+
             ptr.pos += string.size();
+
+            return string;
         } finally {
             unlock(ptr);
         }
-
-        return string;
     }
 
-    @JRubyMethod(name = "pread", required = 2, optional = 1)
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject arg0) {
+        return preadCommon(context, 1, arg0, null, null);
+    }
+
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return preadCommon(context, 2, arg0, arg1, null);
+    }
+
+    @JRubyMethod(name = "pread")
+    public IRubyObject pread(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return preadCommon(context, 3, arg0, arg1, arg2);
+    }
+
     @SuppressWarnings("fallthrough")
-    public IRubyObject pread(ThreadContext context, IRubyObject[] args) {
+    private RubyString preadCommon(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        IRubyObject str = context.nil;
+        StringIOData ptr = this.ptr;
+        Ruby runtime = context.runtime;
+        int offset;
+        final RubyString string;
+        int len;
         checkReadable();
 
-        final Ruby runtime = context.runtime;
-        IRubyObject str = context.nil;
-        int len;
-        int offset;
-
-        StringIOData ptr = this.ptr;
-        final RubyString string;
-
-        switch (args.length) {
+        switch (argc) {
             case 3:
-                str = args[2];
+                str = arg2;
                 if (!str.isNil()) {
                     str = str.convertToString();
                     ((RubyString) str).modify();
                 }
             case 2:
-                len = RubyNumeric.fix2int(args[0]);
-                offset = RubyNumeric.fix2int(args[1]);
-                if (!args[0].isNil()) {
-                    len = RubyNumeric.fix2int(args[0]);
+                len = RubyNumeric.fix2int(arg0);
+                offset = RubyNumeric.fix2int(arg1);
+                if (!arg0.isNil()) {
+                    len = RubyNumeric.fix2int(arg0);
 
                     if (len < 0) {
                         throw runtime.newArgumentError("negative length " + len + " given");
@@ -978,7 +1123,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 }
                 break;
             default:
-                throw runtime.newArgumentError(args.length, 0, 2);
+                throw runtime.newArgumentError(argc, 0, 2);
         }
 
         lock(ptr);
@@ -1046,18 +1191,34 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     // MRI: strio_reopen
-    @JRubyMethod(name = "reopen", optional = 2)
-    public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+    @JRubyMethod(name = "reopen")
+    public IRubyObject reopen(ThreadContext context) {
+        // reset the state
+        strioInit(context, 0, null, null);
+        return this;
+    }
 
+    // MRI: strio_reopen
+    @JRubyMethod(name = "reopen")
+    public IRubyObject reopen(ThreadContext context, IRubyObject arg0) {
         checkFrozen();
 
-        if (argc == 1 && !(args[0] instanceof RubyString)) {
-            return initialize_copy(context, args[0]);
+        if (!(arg0 instanceof RubyString)) {
+            return initialize_copy(context, arg0);
         }
 
         // reset the state
-        strioInit(context, args);
+        strioInit(context, 1, arg0, null);
+        return this;
+    }
+
+    // MRI: strio_reopen
+    @JRubyMethod(name = "reopen")
+    public IRubyObject reopen(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        checkFrozen();
+
+        // reset the state
+        strioInit(context, 2, arg0, arg1);
         return this;
     }
 
@@ -1078,19 +1239,28 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return RubyFixnum.zero(context.runtime);
     }
 
-    @JRubyMethod(required = 1, optional = 1)
-    public IRubyObject seek(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+    @JRubyMethod
+    public IRubyObject seek(ThreadContext context, IRubyObject arg0) {
+        return seekCommon(context, 1, arg0, null);
+    }
 
-        Ruby runtime = context.runtime;
+    @JRubyMethod
+    public IRubyObject seek(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        return seekCommon(context, 2, arg0, arg1);
+    }
 
+    private RubyFixnum seekCommon(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1) {
         checkFrozen();
         checkFinalized();
 
-        int offset = RubyNumeric.num2int(args[0]);
-        IRubyObject whence = context.nil;
+        Ruby runtime = context.runtime;
 
-        if (argc > 1 && !args[0].isNil()) whence = args[1];
+        IRubyObject whence = context.nil;
+        int offset = RubyNumeric.num2int(arg0);
+
+        if (argc > 1 && !arg0.isNil()) {
+            whence = arg1;
+        }
 
         checkOpen();
 
@@ -1151,11 +1321,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject sync(ThreadContext context) {
         checkInitialized();
         return context.tru;
-    }
-
-    // only here for the fake-out class in org.jruby
-    public IRubyObject sysread(IRubyObject[] args) {
-        return GenericReadable.sysread(getRuntime().getCurrentContext(), this, args);
     }
 
     @JRubyMethod(name = "truncate", required = 1)
@@ -1300,6 +1465,25 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         return RubyFixnum.newFixnum(runtime, stringIOWrite(context, runtime, arg));
+    }
+
+    @JRubyMethod(name = "write")
+    public IRubyObject write(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        Ruby runtime = context.runtime;
+        long len = 0;
+        len += stringIOWrite(context, runtime, arg0);
+        len += stringIOWrite(context, runtime, arg1);
+        return RubyFixnum.newFixnum(runtime, len);
+    }
+
+    @JRubyMethod(name = "write")
+    public IRubyObject write(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        Ruby runtime = context.runtime;
+        long len = 0;
+        len += stringIOWrite(context, runtime, arg0);
+        len += stringIOWrite(context, runtime, arg1);
+        len += stringIOWrite(context, runtime, arg2);
+        return RubyFixnum.newFixnum(runtime, len);
     }
 
     @JRubyMethod(name = "write", required = 1, rest = true)
@@ -1480,18 +1664,45 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             return b;
         }
 
-        @JRubyMethod(name = "readline", optional = 1, writes = FrameField.LASTLINE)
-        public static IRubyObject readline(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            IRubyObject line = self.callMethod(context, "gets", args);
+        @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+        public static IRubyObject readline(ThreadContext context, IRubyObject self) {
+            IRubyObject line = self.callMethod(context, "gets");
 
             if (line.isNil()) throw context.runtime.newEOFError();
 
             return line;
         }
 
-        @JRubyMethod(name = {"sysread", "readpartial"}, optional = 2)
-        public static IRubyObject sysread(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-            IRubyObject val = self.callMethod(context, "read", args);
+        @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
+        public static IRubyObject readline(ThreadContext context, IRubyObject self, IRubyObject arg0) {
+            IRubyObject line = self.callMethod(context, "gets", arg0);
+
+            if (line.isNil()) throw context.runtime.newEOFError();
+
+            return line;
+        }
+
+        @JRubyMethod(name = {"sysread", "readpartial"})
+        public static IRubyObject sysread(ThreadContext context, IRubyObject self) {
+            IRubyObject val = self.callMethod(context, "read");
+
+            if (val.isNil()) throw context.runtime.newEOFError();
+
+            return val;
+        }
+
+        @JRubyMethod(name = {"sysread", "readpartial"})
+        public static IRubyObject sysread(ThreadContext context, IRubyObject self, IRubyObject arg0) {
+            IRubyObject val = Helpers.invoke(context, self, "read", arg0);
+
+            if (val.isNil()) throw context.runtime.newEOFError();
+
+            return val;
+        }
+
+        @JRubyMethod(name = {"sysread", "readpartial"})
+        public static IRubyObject sysread(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+            IRubyObject val = Helpers.invoke(context, self, "read", arg0, arg1);
 
             if (val.isNil()) throw context.runtime.newEOFError();
 
@@ -1522,7 +1733,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     public static class GenericWritable {
-        @JRubyMethod(name = "<<", required = 1)
+        @JRubyMethod(name = "<<")
         public static IRubyObject append(ThreadContext context, IRubyObject self, IRubyObject arg) {
             // Claims conversion is done via 'to_s' in docs.
             self.callMethod(context, "write", arg);
@@ -1543,7 +1754,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         @JRubyMethod(name = "puts", rest = true)
         public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject[] args) {
-            // TODO: This should defer to RubyIO logic, but we don't have puts right there for 1.9
+            // TODO: This should defer to RubyIO logic?
             Ruby runtime = context.runtime;
             if (args.length == 0) {
                 RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
@@ -1551,36 +1762,77 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             }
 
             for (int i = 0; i < args.length; i++) {
-                RubyString line = null;
+                putsArg(context, maybeIO, args[i], runtime);
+            }
 
-                if (!args[i].isNil()) {
-                    IRubyObject tmp = args[i].checkArrayType();
-                    if (!tmp.isNil()) {
-                        @SuppressWarnings("unchecked")
-                        RubyArray<IRubyObject> arr = (RubyArray<IRubyObject>) tmp;
-                        if (runtime.isInspecting(arr)) {
-                            line = runtime.newString("[...]");
-                        } else {
-                            inspectPuts(context, maybeIO, arr);
-                            continue;
-                        }
+            return context.nil;
+        }
+
+        @JRubyMethod(name = "puts")
+        public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO) {
+            // TODO: This should defer to RubyIO logic?
+            RubyIO.write(context, maybeIO, RubyString.newStringShared(context.runtime, NEWLINE));
+            return context.nil;
+        }
+
+        @JRubyMethod(name = "puts")
+        public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0) {
+            // TODO: This should defer to RubyIO logic?
+            putsArg(context, maybeIO, arg0, context.runtime);
+
+            return context.nil;
+        }
+
+        @JRubyMethod(name = "puts")
+        public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1) {
+            // TODO: This should defer to RubyIO logic?
+            Ruby runtime = context.runtime;
+
+            putsArg(context, maybeIO, arg0, runtime);
+            putsArg(context, maybeIO, arg1, runtime);
+
+            return context.nil;
+        }
+
+        @JRubyMethod(name = "puts")
+        public static IRubyObject puts(ThreadContext context, IRubyObject maybeIO, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            // TODO: This should defer to RubyIO logic?
+            Ruby runtime = context.runtime;
+
+            putsArg(context, maybeIO, arg0, runtime);
+            putsArg(context, maybeIO, arg1, runtime);
+            putsArg(context, maybeIO, arg2, runtime);
+
+            return context.nil;
+        }
+
+        private static void putsArg(ThreadContext context, IRubyObject maybeIO, IRubyObject arg, Ruby runtime) {
+            RubyString line = null;
+            if (!arg.isNil()) {
+                IRubyObject tmp = arg.checkArrayType();
+                if (!tmp.isNil()) {
+                    @SuppressWarnings("unchecked")
+                    RubyArray<IRubyObject> arr = (RubyArray<IRubyObject>) tmp;
+                    if (runtime.isInspecting(arr)) {
+                        line = runtime.newString("[...]");
                     } else {
-                        if (args[i] instanceof RubyString) {
-                            line = (RubyString) args[i];
-                        } else {
-                            line = args[i].asString();
-                        }
+                        inspectPuts(context, maybeIO, arr);
+                        return;
                     }
-                }
-
-                if (line != null) RubyIO.write(context, maybeIO, line);
-
-                if (line == null || !line.getByteList().endsWith(NEWLINE)) {
-                    RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
+                } else {
+                    if (arg instanceof RubyString) {
+                        line = (RubyString) arg;
+                    } else {
+                        line = arg.asString();
+                    }
                 }
             }
 
-            return runtime.getNil();
+            if (line != null) RubyIO.write(context, maybeIO, line);
+
+            if (line == null || !line.getByteList().endsWith(NEWLINE)) {
+                RubyIO.write(context, maybeIO, RubyString.newStringShared(runtime, NEWLINE));
+            }
         }
 
         private static IRubyObject inspectPuts(ThreadContext context, IRubyObject maybeIO, RubyArray<IRubyObject> array) {
@@ -1594,7 +1846,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             }
         }
 
-        @JRubyMethod(name = "syswrite", required = 1)
+        @JRubyMethod(name = "syswrite")
         public static IRubyObject syswrite(ThreadContext context, IRubyObject self, IRubyObject arg) {
             return RubyIO.write(context, self, arg);
         }
