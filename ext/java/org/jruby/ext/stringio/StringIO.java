@@ -100,6 +100,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         RubyString version = RubyString.newString(runtime, STRINGIO_VERSION);
         stringIOClass.defineConstant("VERSION", version);
 
+        stringIOClass.defineConstant("MAX_LENGTH", RubyNumeric.int2fix(runtime, Integer.MAX_VALUE));
+
         stringIOClass.defineAnnotatedMethods(StringIO.class);
         stringIOClass.includeModule(runtime.getEnumerable());
 
