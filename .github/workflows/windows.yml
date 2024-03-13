@@ -3,7 +3,16 @@ name: windows
 on: [push, pull_request]
 
 jobs:
+  ruby-versions:
+    if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
+    uses: ruby/actions/.github/workflows/ruby_versions.yml@master
+    with:
+      engine: cruby
+      min_version: 2.7
+      versions: '["mswin", "mingw"]'
+
   build:
+    needs: ruby-versions
     name: ${{ matrix.os }} ${{ matrix.ruby }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -11,8 +20,15 @@ jobs:
       matrix:
         os:
         - windows-latest
-        ruby: [ '2.7', '3.0', '3.1', '3.2', 'mswin', 'mingw' ]
+        ruby: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
+        exclude:
+          - ruby: head
     steps:
+    - name: git config
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+        git config --global advice.detachedHead 0
     - uses: actions/checkout@v4
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
@@ -21,4 +37,3 @@ jobs:
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
     - name: Run test
       run: bundle exec rake
-

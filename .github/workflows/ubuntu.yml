@@ -3,7 +3,16 @@ name: ubuntu
 on: [push, pull_request]
 
 jobs:
+  ruby-versions:
+    if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
+    uses: ruby/actions/.github/workflows/ruby_versions.yml@master
+    with:
+      engine: cruby
+      min_version: 2.7
+      versions: '["debug", "jruby-head", "truffleruby-head"]'
+
   build:
+    needs: ruby-versions
     name: ${{ matrix.os }} ${{ matrix.ruby }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -12,8 +21,13 @@ jobs:
         os:
         - ubuntu-22.04
         - ubuntu-20.04
-        ruby: [ '2.7', '3.0', '3.1', '3.2', 'debug', 'head', 'jruby-head', 'truffleruby-head' ]
+        ruby: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
     steps:
+    - name: git config
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+        git config --global advice.detachedHead 0
     - uses: actions/checkout@v4
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
@@ -27,7 +41,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: >-
         matrix.os == 'ubuntu-22.04' &&
-          matrix.ruby == 'jruby-head'
+          (matrix.ruby == needs.ruby-versions.outputs.latest || matrix.ruby == 'jruby-head')
       with:
         name: gem-${{ matrix.os }}-${{ matrix.ruby }}
         path: pkg/

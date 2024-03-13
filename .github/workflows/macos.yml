@@ -3,7 +3,16 @@ name: macos
 on: [push, pull_request]
 
 jobs:
+  ruby-versions:
+    if: ${{ startsWith(github.repository, 'ruby/') || github.event_name != 'schedule' }}
+    uses: ruby/actions/.github/workflows/ruby_versions.yml@master
+    with:
+      engine: cruby
+      min_version: 2.7
+      versions: '["debug"]'
+
   build:
+    needs: ruby-versions
     name: ${{ matrix.os }} ${{ matrix.ruby }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -11,9 +20,14 @@ jobs:
       matrix:
         os:
         - macos-12
-        - macos-arm-oss
-        ruby: [ '2.7', '3.0', '3.1', '3.2', 'debug', 'head' ]
+        - macos-14
+        ruby: ${{ fromJson(needs.ruby-versions.outputs.versions) }}
     steps:
+    - name: git config
+      run: |
+        git config --global core.autocrlf false
+        git config --global core.eol lf
+        git config --global advice.detachedHead 0
     - uses: actions/checkout@v4
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
@@ -26,8 +40,8 @@ jobs:
       run: bundle exec rake build
     - uses: actions/upload-artifact@v4
       if: >-
-        matrix.os == 'macos-12' &&
-          matrix.ruby == '3.2'
+        matrix.os == 'macos-14' &&
+          matrix.ruby == needs.ruby-versions.outputs.latest
       with:
         name: gem-${{ matrix.os }}-${{ matrix.ruby }}
         path: pkg/
