@@ -436,13 +436,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
     }
 
-    @JRubyMethod(name = "lines", optional = 2)
-    public IRubyObject lines(ThreadContext context, IRubyObject[] args, Block block) {
-        context.runtime.getWarnings().warn("StringIO#lines is deprecated; use #each_line instead");
-        return block.isGiven() ? each(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
-    }
-
-    @JRubyMethod(name = {"each_byte", "bytes"})
+    @JRubyMethod(name = {"each_byte"})
     public IRubyObject each_byte(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
 
@@ -476,13 +470,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             block.yieldSpecific(context, c);
         }
         return this;
-    }
-
-    @JRubyMethod
-    public IRubyObject chars(final ThreadContext context, final Block block) {
-        context.runtime.getWarnings().warn("StringIO#chars is deprecated; use #each_char instead");
-
-        return each_char(context, block);
     }
 
     @JRubyMethod(name = {"eof", "eof?"})
@@ -1472,16 +1459,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         } finally {
             unlock(ptr);
         }
-    }
-
-    @JRubyMethod(name = "codepoints")
-    public IRubyObject codepoints(ThreadContext context, Block block) {
-        Ruby runtime = context.runtime;
-        runtime.getWarnings().warn("StringIO#codepoints is deprecated; use #each_codepoint");
-
-        if (!block.isGiven()) return enumeratorize(runtime, this, "each_codepoint");
-
-        return each_codepoint(context, block);
     }
 
     public static class GenericReadable {
