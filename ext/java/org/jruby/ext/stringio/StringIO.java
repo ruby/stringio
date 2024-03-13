@@ -940,7 +940,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (pos + len > olen) {
                 string.resize(pos + len);
                 if (pos > olen) {
-                    string.modify19();
+                    modifyString(string);
                     ByteList ptrByteList = string.getByteList();
                     // zero the gap
                     int begin = ptrByteList.getBegin();
@@ -950,7 +950,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                             (byte) 0);
                 }
             } else {
-                string.modify19();
+                modifyString(string);
             }
         } finally {
             if (locked) unlock(ptr);
@@ -962,11 +962,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject putc(ThreadContext context, IRubyObject ch) {
         Ruby runtime = context.runtime;
         checkWritable();
-        IRubyObject str;
+        IRubyObject str = null;
 
         checkModifiable();
         if (ch instanceof RubyString) {
-            str = ((RubyString)ch).substr19(runtime, 0, 1);
+            str = substrString((RubyString) ch, str, runtime);
         }
         else {
             byte c = RubyNumeric.num2chr(ch);
@@ -1501,20 +1501,54 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private static final MethodHandle CAT_WITH_CODE_RANGE;
+    private static final MethodHandle MODIFY_AND_CLEAR_CODE_RANGE;
+    private static final MethodHandle SUBSTR_ENC;
 
     static {
-        MethodHandle cat;
+        MethodHandle cat, modify, substr;
+        MethodHandles.Lookup lookup = MethodHandles.publicLookup();
         try {
-            cat = MethodHandles.publicLookup().findVirtual(RubyString.class, "catWithCodeRange", MethodType.methodType(RubyString.class, RubyString.class));
+            cat = lookup.findVirtual(RubyString.class, "catWithCodeRange", MethodType.methodType(RubyString.class, RubyString.class));
+            modify = lookup.findVirtual(RubyString.class, "modifyAndClearCodeRange", MethodType.methodType(void.class));
+            substr = lookup.findVirtual(RubyString.class, "substrEnc", MethodType.methodType(IRubyObject.class, Ruby.class, int.class, int.class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             try {
-                cat = MethodHandles.publicLookup().findVirtual(RubyString.class, "cat19", MethodType.methodType(RubyString.class, RubyString.class));
+                cat = lookup.findVirtual(RubyString.class, "cat19", MethodType.methodType(RubyString.class, RubyString.class));
+                modify = lookup.findVirtual(RubyString.class, "modify19", MethodType.methodType(void.class));
+                substr = lookup.findVirtual(RubyString.class, "substr19", MethodType.methodType(IRubyObject.class, Ruby.class, int.class, int.class));
             } catch (NoSuchMethodException | IllegalAccessException ex2) {
                 throw new ExceptionInInitializerError(ex2);
             }
         }
 
         CAT_WITH_CODE_RANGE = cat;
+        MODIFY_AND_CLEAR_CODE_RANGE = modify;
+        SUBSTR_ENC = substr;
+    }
+
+    private static void catString(RubyString myString, RubyString str) {
+        try {
+            RubyString unused = (RubyString) CAT_WITH_CODE_RANGE.invokeExact(myString, str);
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
+    private static void modifyString(RubyString string) {
+        try {
+            MODIFY_AND_CLEAR_CODE_RANGE.invokeExact(string);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+        }
+    }
+
+    private static IRubyObject substrString(RubyString ch, IRubyObject str, Ruby runtime) {
+        try {
+            str = (IRubyObject) SUBSTR_ENC.invokeExact(ch, runtime, 0, 1);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+        }
+        return str;
     }
 
     // MRI: strio_write
@@ -1549,11 +1583,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
                     EncodingUtils.encStrBufCat(runtime, myString, strByteList, enc);
                 } else {
-                    try {
-                        RubyString unused = (RubyString) CAT_WITH_CODE_RANGE.invokeExact(myString, str);
-                    } catch (Throwable t) {
-                        throw new RuntimeException(t);
-                    }
+                    catString(myString, str);
                 }
             } else {
                 strioExtend(context, pos, len);
