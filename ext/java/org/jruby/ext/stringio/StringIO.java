@@ -117,7 +117,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     // mri: get_enc
     public Encoding getEncoding() {
-        return ptr.enc != null ? ptr.enc : ptr.string.getEncoding();
+        StringIOData ptr = this.ptr;
+        Encoding enc = ptr.enc;
+        return enc != null ? enc : ptr.string.getEncoding();
     }
 
     public void setEncoding(Encoding enc) {
@@ -238,14 +240,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (this == otherIO) return this;
 
         ptr = otherIO.ptr;
-        flags &= ~STRIO_READWRITE;
-        flags |= otherIO.flags & STRIO_READWRITE;
+        flags = flags & ~STRIO_READWRITE | otherIO.flags & STRIO_READWRITE;
 
         return this;
     }
 
     @JRubyMethod
     public IRubyObject binmode(ThreadContext context) {
+        StringIOData ptr = this.ptr;
         ptr.enc = EncodingUtils.ascii8bitEncoding(context.runtime);
         if (writable()) ptr.string.setEncoding(ptr.enc);
 
@@ -307,8 +309,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if ( (ptr.flags & OpenFile.READABLE) == 0 ) {
             throw context.runtime.newIOError("not opened for reading");
         }
+        int flags = this.flags;
         if ( ( flags & STRIO_READABLE ) != 0 ) {
-            flags &= ~STRIO_READABLE;
+            this.flags = flags & ~STRIO_READABLE;
         }
         return context.nil;
     }
@@ -326,8 +329,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if ( (ptr.flags & OpenFile.WRITABLE) == 0 ) {
             throw context.runtime.newIOError("not opened for writing");
         }
+        int flags = this.flags;
         if ( ( flags & STRIO_WRITABLE ) != 0 ) {
-            flags &= ~STRIO_WRITABLE;
+            this.flags = flags & ~STRIO_WRITABLE;
         }
         return context.nil;
     }
@@ -440,11 +444,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = {"each_byte", "bytes"})
     public IRubyObject each_byte(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_byte");
+        Ruby runtime = context.runtime;
+
+        if (!block.isGiven()) return enumeratorize(runtime, this, "each_byte");
 
         checkReadable();
-
-        Ruby runtime = context.runtime;
         StringIOData ptr = this.ptr;
 
         lock(ptr);
@@ -503,11 +507,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         lock(ptr);
         try {
             int start = ptr.pos;
-            int total = 1 + StringSupport.bytesToFixBrokenTrailingCharacter(ptr.string.getByteList(), start + 1);
+            RubyString string = ptr.string;
+            int total = 1 + StringSupport.bytesToFixBrokenTrailingCharacter(string.getByteList(), start + 1);
 
             ptr.pos += total;
 
-            return context.runtime.newString(ptr.string.getByteList().makeShared(start, total));
+            return context.runtime.newString(string.getByteList().makeShared(start, total));
         } finally {
             unlock(ptr);
         }
@@ -523,7 +528,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         StringIOData ptr = this.ptr;
         lock(ptr);
         try {
-            c = ptr.string.getByteList().get(this.ptr.pos++) & 0xFF;
+            c = ptr.string.getByteList().get(ptr.pos++) & 0xFF;
         } finally {
             unlock(ptr);
         }
@@ -684,7 +689,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             final ByteList string = ptr.string.getByteList();
             final byte[] stringBytes = string.getUnsafeBytes();
             int begin = string.getBegin();
-            int s = begin + ptr.pos;
+            int pos = ptr.pos;
+            int s = begin + pos;
             int e = begin + string.getRealSize();
             int p;
             int w = 0;
@@ -696,7 +702,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (chomp) {
                     w = chompNewlineWidth(stringBytes, s, e);
                 }
-                str = strioSubstr(runtime, ptr.pos, e - s - w, enc);
+                str = strioSubstr(runtime, pos, e - s - w, enc);
             } else if ((n = ((RubyString) rs).size()) == 0) {
                 int paragraph_end = 0;
                 p = s;
@@ -731,7 +737,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     e = p + 1;
                     w = (chomp ? ((p > s && stringBytes[p-1] == '\r')?1:0) + 1 : 0);
                 }
-                str = strioSubstr(runtime, ptr.pos, e - s - w, enc);
+                str = strioSubstr(runtime, pos, e - s - w, enc);
             } else {
                 if (n < e - s + (chomp ? 1 : 0)) {
                     RubyString rsStr = (RubyString) rs;
@@ -749,15 +755,15 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                         }
                     } else {
                         int[] skip = new int[1 << CHAR_BIT];
-                        int pos;
+                        int pos2;
                         p = rsByteList.getBegin();
                         bm_init_skip(skip, rsBytes, p, n);
-                        if ((pos = bm_search(rsBytes, p, n, stringBytes, s, e - s, skip)) >= 0) {
-                            e = s + pos + n;
+                        if ((pos2 = bm_search(rsBytes, p, n, stringBytes, s, e - s, skip)) >= 0) {
+                            e = s + pos2 + n;
                         }
                     }
                 }
-                str = strioSubstr(runtime, ptr.pos, e - s - w, enc);
+                str = strioSubstr(runtime, pos, e - s - w, enc);
             }
             ptr.pos = e - begin;
             ptr.lineno++;
@@ -822,20 +828,22 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         lock(ptr);
         try {
-            final int olen = ptr.string.size();
+            RubyString string = ptr.string;
+            final int olen = string.size();
             if (pos + len > olen) {
-                ptr.string.resize(pos + len);
+                string.resize(pos + len);
                 if (pos > olen) {
-                    ptr.string.modify19();
-                    ByteList ptrByteList = ptr.string.getByteList();
+                    string.modify19();
+                    ByteList ptrByteList = string.getByteList();
                     // zero the gap
+                    int begin = ptrByteList.getBegin();
                     Arrays.fill(ptrByteList.getUnsafeBytes(),
-                            ptrByteList.getBegin() + olen,
-                            ptrByteList.getBegin() + pos,
+                            begin + olen,
+                            begin + pos,
                             (byte) 0);
                 }
             } else {
-                ptr.string.modify19();
+                string.modify19();
             }
         } finally {
             unlock(ptr);
@@ -874,6 +882,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         boolean binary = false;
 
         StringIOData ptr = this.ptr;
+        int pos = ptr.pos;
         final RubyString string;
 
         lock(ptr);
@@ -901,7 +910,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     }
                 case 0:
                     len = ptr.string.size();
-                    if (len <= ptr.pos) {
+                    if (len <= pos) {
                         Encoding enc = binary ? ASCIIEncoding.INSTANCE : getEncoding();
                         if (str.isNil()) {
                             str = runtime.newString();
@@ -911,7 +920,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                         ((RubyString) str).setEncoding(enc);
                         return str;
                     } else {
-                        len -= ptr.pos;
+                        len -= pos;
                     }
                     break;
                 default:
@@ -920,21 +929,22 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
             if (str.isNil()) {
                 Encoding enc = binary ? ASCIIEncoding.INSTANCE : getEncoding();
-                string = strioSubstr(runtime, ptr.pos, len, enc);
+                string = strioSubstr(runtime, pos, len, enc);
             } else {
                 string = (RubyString) str;
-                int rest = ptr.string.size() - ptr.pos;
+                RubyString myString = ptr.string;
+                int rest = myString.size() - pos;
                 if (len > rest) len = rest;
                 string.resize(len);
                 ByteList strByteList = string.getByteList();
                 byte[] strBytes = strByteList.getUnsafeBytes();
-                ByteList dataByteList = ptr.string.getByteList();
+                ByteList dataByteList = myString.getByteList();
                 byte[] dataBytes = dataByteList.getUnsafeBytes();
-                System.arraycopy(dataBytes, dataByteList.getBegin() + ptr.pos, strBytes, strByteList.getBegin(), len);
+                System.arraycopy(dataBytes, dataByteList.getBegin() + pos, strBytes, strByteList.getBegin(), len);
                 if (binary) {
                     string.setEncoding(ASCIIEncoding.INSTANCE);
                 } else {
-                    string.setEncoding(ptr.string.getEncoding());
+                    string.setEncoding(myString.getEncoding());
                 }
             }
             ptr.pos += string.size();
@@ -986,7 +996,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         lock(ptr);
         try {
-            if (offset >= ptr.string.size()) {
+            RubyString myString = ptr.string;
+            if (offset >= myString.size()) {
                 throw context.runtime.newEOFError();
             }
 
@@ -995,12 +1006,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             }
 
             string = (RubyString) str;
-            int rest = ptr.string.size() - offset;
+            int rest = myString.size() - offset;
             if (len > rest) len = rest;
             string.resize(len);
             ByteList strByteList = string.getByteList();
             byte[] strBytes = strByteList.getUnsafeBytes();
-            ByteList dataByteList = ptr.string.getByteList();
+            ByteList dataByteList = myString.getByteList();
             byte[] dataBytes = dataByteList.getUnsafeBytes();
             System.arraycopy(dataBytes, dataByteList.getBegin() + offset, strBytes, strByteList.getBegin(), len);
             string.setEncoding(ASCIIEncoding.INSTANCE);
@@ -1224,10 +1235,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         lock(ptr);
         try {
-            ptr.string.modify();
+            RubyString string = ptr.string;
+            string.modify();
             ptr.pos--;
 
-            ByteList bytes = ptr.string.getByteList();
+            ByteList bytes = string.getByteList();
 
             if (isEndOfString()) bytes.length(ptr.pos + 1);
 
@@ -1256,19 +1268,21 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         lock(ptr);
         try {
-            ptr.string.modify();
+            RubyString string = ptr.string;
+            string.modify();
 
-            if (ungetLen > ptr.pos) {
+            int pos = ptr.pos;
+            if (ungetLen > pos) {
                 start = 0;
             } else {
-                start = ptr.pos - ungetLen;
+                start = pos - ungetLen;
             }
 
-            ByteList byteList = ptr.string.getByteList();
+            ByteList byteList = string.getByteList();
 
-            if (isEndOfString()) byteList.length(Math.max(ptr.pos, ungetLen));
+            if (isEndOfString()) byteList.length(Math.max(pos, ungetLen));
 
-            byteList.replace(start, ptr.pos - start, ungetBytes, ungetBegin, ungetLen);
+            byteList.replace(start, pos - start, ungetBytes, ungetBegin, ungetLen);
 
             ptr.pos = start;
         } finally {
@@ -1352,26 +1366,28 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             len = str.size();
             if (len == 0) return 0;
             checkModifiable();
-            olen = ptr.string.size();
+            RubyString myString = ptr.string;
+            olen = myString.size();
             if ((ptr.flags & OpenFile.APPEND) != 0) {
                 ptr.pos = olen;
             }
-            if (ptr.pos == olen) {
+            int pos = ptr.pos;
+            if (pos == olen) {
                 if (enc == EncodingUtils.ascii8bitEncoding(runtime) || encStr == EncodingUtils.ascii8bitEncoding(runtime)) {
-                    EncodingUtils.encStrBufCat(runtime, ptr.string, strByteList, enc);
+                    EncodingUtils.encStrBufCat(runtime, myString, strByteList, enc);
                 } else {
                     try {
-                        RubyString unused = (RubyString) CAT_WITH_CODE_RANGE.invokeExact(ptr.string, str);
+                        RubyString unused = (RubyString) CAT_WITH_CODE_RANGE.invokeExact(myString, str);
                     } catch (Throwable t) {
                         throw new RuntimeException(t);
                     }
                 }
             } else {
-                strioExtend(ptr.pos, len);
-                ByteList ptrByteList = ptr.string.getByteList();
-                System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + ptr.pos, len);
+                strioExtend(pos, len);
+                ByteList ptrByteList = myString.getByteList();
+                System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + pos, len);
             }
-            ptr.pos += len;
+            ptr.pos = pos + len;
         } finally {
             unlock(ptr);
         }
@@ -1440,16 +1456,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         lock(ptr);
         try {
             final Encoding enc = getEncoding();
-            final ByteList string = ptr.string.getByteList();
+            RubyString myString = ptr.string;
+            final ByteList string = myString.getByteList();
             final byte[] stringBytes = string.getUnsafeBytes();
             int begin = string.getBegin();
             for (; ; ) {
-                if (ptr.pos >= ptr.string.size()) return this;
+                int pos = ptr.pos;
+                if (pos >= string.realSize()) return this;
 
-                int c = StringSupport.codePoint(runtime, enc, stringBytes, begin + ptr.pos, stringBytes.length);
+                int c = StringSupport.codePoint(runtime, enc, stringBytes, begin + pos, stringBytes.length);
                 int n = StringSupport.codeLength(enc, c);
                 block.yield(context, runtime.newFixnum(c));
-                ptr.pos += n;
+                ptr.pos = pos + n;
             }
         } finally {
             unlock(ptr);
