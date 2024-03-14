@@ -36,8 +36,11 @@ Rake::TestTask.new(:test) do |t|
   t.test_files = FileList["test/**/test_*.rb"]
 end
 
+helper = Bundler::GemHelper.instance
 RDoc::Task.new do |rdoc|
-  rdoc.rdoc_files.concat(Bundler::GemHelper.instance.gemspec.extra_rdoc_files)
+  rdoc.rdoc_files.push("COPYING", "LICENSE.txt",
+                       "NEWS.md", "README.md",
+                       "docs/io.rb", "ext/stringio/stringio.c")
 end
 
 task :default => :test

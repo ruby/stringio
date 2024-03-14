@@ -2,4 +2,4 @@ COPYING
 *.md
 *.txt
 docs/
-ext/
+ext/stringio/
