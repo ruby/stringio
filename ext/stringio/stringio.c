@@ -1187,9 +1187,7 @@ prepare_getline_args(struct StringIO *ptr, struct getline_arg *arg, int argc, VA
                 rs = rs;
             }
             else {
-                rb_raise(rb_eArgError, "encoding mismatch: %s IO with %s RS",
-                         rb_enc_name(enc_io),
-                         rb_enc_name(enc_rs));
+		rs = rb_str_conv_enc(rs, enc_rs, enc_io);
             }
         }
     }

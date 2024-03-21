@@ -102,6 +102,11 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal("line2\n".encode("utf-16le"), stringio.gets)
     assert_equal("line3\n".encode("utf-16le"), stringio.gets)
     assert_nil(stringio.gets)
+    stringio.rewind
+    assert_equal("line1\n".encode("utf-16le"), stringio.gets("\n"))
+    assert_equal("line2\n".encode("utf-16le"), stringio.gets("\n"))
+    assert_equal("line3\n".encode("utf-16le"), stringio.gets("\n"))
+    assert_nil(stringio.gets)
   end
 
   def test_gets_chomp
