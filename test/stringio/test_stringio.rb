@@ -981,4 +981,12 @@ class TestStringIO < Test::Unit::TestCase
   def assert_string(content, encoding, str, mesg = nil)
     assert_equal([content, encoding], [str, str.encoding], mesg)
   end
+
+  if eval(%{ "test".frozen? && !"test".equal?("test") }) # Ruby 3.4+ chilled strings
+    def test_chilled_string
+      io = eval(%{ StringIO.new("") })
+      io << "test"
+      assert_equal("test", io.string)
+    end
+  end
 end
