@@ -18,6 +18,7 @@ STRINGIO_VERSION = "3.1.1";
 #include "ruby.h"
 #include "ruby/io.h"
 #include "ruby/encoding.h"
+#include "ruby/version.h"
 #if defined(HAVE_FCNTL_H) || defined(_WIN32)
 #include <fcntl.h>
 #elif defined(HAVE_SYS_FCNTL_H)
@@ -130,6 +131,16 @@ strio_substr(struct StringIO *ptr, long pos, long len, rb_encoding *enc)
 
 #define StringIO(obj) get_strio(obj)
 
+// From internal/string.h
+// Ruby 3.4 introduces "chilled" strings, which behave like frozen strings unless written to.
+// In order to facilitate an easier upgrade path, print a deprecation warning instead of raising.
+#define STR_CHILLED FL_USER3
+# if RUBY_API_VERSION_CODE < 30400
+#define CHILLED_STRING_P(value) 0
+#else
+# define CHILLED_STRING_P(value) FL_TEST_RAW(value, STR_CHILLED)
+#endif
+
 #define STRIO_READABLE FL_USER4
 #define STRIO_WRITABLE FL_USER5
 #define STRIO_READWRITE (STRIO_READABLE|STRIO_WRITABLE)
@@ -166,7 +177,7 @@ writable(VALUE strio)
 static void
 check_modifiable(struct StringIO *ptr)
 {
-    if (OBJ_FROZEN(ptr->string)) {
+    if (OBJ_FROZEN(ptr->string) && !CHILLED_STRING_P(ptr->string)) {
 	rb_raise(rb_eIOError, "not modifiable string");
     }
 }
@@ -287,7 +298,7 @@ strio_init(int argc, VALUE *argv, struct StringIO *ptr, VALUE self)
     else if (!argc) {
 	string = rb_enc_str_new("", 0, rb_default_external_encoding());
     }
-    if (!NIL_P(string) && OBJ_FROZEN_RAW(string)) {
+    if (!NIL_P(string) && OBJ_FROZEN_RAW(string) && !CHILLED_STRING_P(string)) {
 	if (ptr->flags & FMODE_WRITABLE) {
 	    rb_syserr_fail(EACCES, 0);
 	}
@@ -481,7 +492,7 @@ strio_set_string(VALUE self, VALUE string)
     rb_io_taint_check(self);
     ptr->flags &= ~FMODE_READWRITE;
     StringValue(string);
-    ptr->flags = OBJ_FROZEN(string) ? FMODE_READABLE : FMODE_READWRITE;
+    ptr->flags = OBJ_FROZEN(string) && !CHILLED_STRING_P(string) ? FMODE_READABLE : FMODE_READWRITE;
     ptr->pos = 0;
     ptr->lineno = 0;
     RB_OBJ_WRITE(self, &ptr->string, string);

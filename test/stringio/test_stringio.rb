@@ -882,6 +882,24 @@ class TestStringIO < Test::Unit::TestCase
     assert_raise(IOError, bug) {s.ungetbyte("a")}
   end
 
+  def test_chilled_string
+    s = eval("StringIO.new('')")
+    assert_predicate(s.string, :frozen?)
+
+    assert_deprecated_warning(/literal string will be frozen in the future/) do
+      s.write("abc")
+    end
+    refute_predicate(s.string, :frozen?)
+
+    eval("s.string = 'foo'")
+
+    assert_predicate(s.string, :frozen?)
+    assert_deprecated_warning(/literal string will be frozen in the future/) do
+      s.write("bar")
+    end
+    refute_predicate(s.string, :frozen?)
+  end if RUBY_VERSION >= "3.4"
+
   def test_readlines_limit_0
     assert_raise(ArgumentError, "[ruby-dev:43392]") { StringIO.new.readlines(0) }
   end
