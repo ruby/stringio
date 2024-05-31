@@ -15,8 +15,6 @@
 static const char *const
 STRINGIO_VERSION = "3.1.1";
 
-#include <stdbool.h>
-
 #include "ruby.h"
 #include "ruby/io.h"
 #include "ruby/encoding.h"
