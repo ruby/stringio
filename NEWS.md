@@ -1,5 +1,34 @@
 # News
 
+## 3.1.1 - 2024-06-13
+
+### Improvements
+
+  * JRuby: Improved.
+    * GH-83
+    * GH-84
+    * GH-85
+
+  * Added `StringIO::MAX_LENGTH`.
+
+  * Added support for NULL `StringIO` by `StringIO.new(nil)`.
+
+  * Improved IO compatibility for partial read.
+    * GH-95
+    * https://bugs.ruby-lang.org/issues/20418
+
+### Fixes
+
+  * Fixed a bug that coderange isn't updated after overwrite.
+    * Reported by Tiago Cardoso.
+    * https://bugs.ruby-lang.org/issues/20185
+    * GH-77
+    * GH-79
+
+### Thanks
+
+  * Tiago Cardoso
+
 ## 3.1.0 - 2023-11-28
 
 ### Fixes
