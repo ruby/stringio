@@ -38,22 +38,5 @@ jobs:
       run: bundle exec rake compile
     - name: Build gem
       run: bundle exec rake build
-    - uses: actions/upload-artifact@v4
-      if: >-
-        matrix.os == 'macos-14' &&
-          matrix.ruby == needs.ruby-versions.outputs.latest
-      with:
-        name: gem-${{ matrix.os }}-${{ matrix.ruby }}
-        path: pkg/
-      id: upload
-    - name: Upload gems
-      if: >-
-        startsWith(github.ref, 'refs/tags/') &&
-          steps.upload.outcome == 'success'
-      run: |
-        gh release upload ${GITHUB_REF_NAME} \
-          pkg/*.gem
-      env:
-        GH_TOKEN: ${{ github.token }}
     - name: Run test
       run: bundle exec rake
