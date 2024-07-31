@@ -33,6 +33,11 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
+import org.jcodings.specific.UTF32BEEncoding;
+import org.jcodings.specific.UTF32LEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
@@ -51,6 +56,7 @@ import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.func.ObjectObjectIntFunction;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.Getline;
 import org.jruby.util.io.IOEncodable;
@@ -63,6 +69,7 @@ import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static java.lang.Byte.toUnsignedInt;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -349,6 +356,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             ptr.enc = encoding;
             ptr.pos = 0;
             ptr.lineno = 0;
+            if ((ptr.flags & OpenFile.SETENC_BY_BOM) != 0) setEncodingByBOM(context);
             // funky way of shifting readwrite flags into object flags
             flags |= (ptr.flags & OpenFile.READWRITE) * (STRIO_READABLE / OpenFile.READABLE);
         } finally {
@@ -1640,6 +1648,73 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject set_encoding(ThreadContext context, IRubyObject enc, IRubyObject ignored1, IRubyObject ignored2) {
         return set_encoding(context, enc);
     }
+
+    @JRubyMethod
+    public IRubyObject set_encoding_by_bom(ThreadContext context) {
+        if (setEncodingByBOM(context) == null) return context.nil;
+
+        return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.enc);
+    }
+
+    private Encoding setEncodingByBOM(ThreadContext context) {
+        Encoding enc = detectBOM(context, ptr.string, (ctx, enc2, bomlen) -> {
+            ptr.pos = bomlen;
+            if (writable()) {
+                ptr.string.setEncoding(enc2);
+            }
+            return enc2;
+        });
+        ptr.enc = enc;
+        return enc;
+    }
+
+    private static Encoding detectBOM(ThreadContext context, RubyString str, ObjectObjectIntFunction<ThreadContext, Encoding, Encoding> callback) {
+        int p;
+        int len;
+
+        ByteList byteList = str.getByteList();
+        byte[] bytes = byteList.unsafeBytes();
+        p = byteList.begin();
+        len = byteList.realSize();
+
+        if (len < 1) return null;
+        switch (toUnsignedInt(bytes[p])) {
+            case 0xEF:
+                if (len < 2) break;
+                if (toUnsignedInt(bytes[p + 1]) == 0xBB && len > 2) {
+                    if (toUnsignedInt(bytes[p + 2]) == 0xBF) {
+                        return callback.apply(context, UTF8Encoding.INSTANCE, 3);
+                    }
+                }
+                break;
+
+            case 0xFE:
+                if (len < 2) break;
+                if (toUnsignedInt(bytes[p + 1]) == 0xFF) {
+                    return callback.apply(context, UTF16BEEncoding.INSTANCE, 2);
+                }
+                break;
+
+            case 0xFF:
+                if (len < 2) break;
+                if (toUnsignedInt(bytes[p + 1]) == 0xFE) {
+                    if (len >= 4 && toUnsignedInt(bytes[p + 2]) == 0 && toUnsignedInt(bytes[p + 3]) == 0) {
+                        return callback.apply(context, UTF32LEEncoding.INSTANCE, 4);
+                    }
+                    return callback.apply(context, UTF16LEEncoding.INSTANCE, 2);
+                }
+                break;
+
+            case 0:
+                if (len < 4) break;
+                if (toUnsignedInt(bytes[p + 1]) == 0 && toUnsignedInt(bytes[p + 2]) == 0xFE && toUnsignedInt(bytes[p + 3]) == 0xFF) {
+                    return callback.apply(context, UTF32BEEncoding.INSTANCE, 4);
+                }
+                break;
+        }
+        return callback.apply(context, null, 0);
+    }
+
 
     @JRubyMethod
     public IRubyObject external_encoding(ThreadContext context) {
