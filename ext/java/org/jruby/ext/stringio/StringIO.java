@@ -53,6 +53,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.Getline;
+import org.jruby.util.io.IOEncodable;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
@@ -296,14 +297,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     break;
             }
             Encoding encoding = null;
+            Object vmodeVperm = EncodingUtils.vmodeVperm(null, null);
+            int[] oflags = {0};
+            int[] fmode = {0};
 
+            // TODO: replace with EncodingUtils#extractModeEncoding
             IRubyObject options = ArgsUtil.getOptionsArg(runtime, maybeOptions);
+            IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
             if (!options.isNil()) {
                 argc--;
-                IRubyObject encodingOpt = ArgsUtil.extractKeywordArg(context, "encoding", (RubyHash) options);
-                if (!encodingOpt.isNil()) {
-                    encoding = EncodingUtils.toEncoding(context, encodingOpt);
-                }
+                EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeVperm, options, oflags, fmode);
+                ptr.flags = fmode[0];
+                encoding = ioEncodable.enc;
             }
 
             switch (argc) {
@@ -312,11 +317,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     final boolean trunc;
                     if (mode instanceof RubyFixnum) {
                         int flags = RubyFixnum.fix2int(mode);
-                        ptr.flags = ModeFlags.getOpenFileFlagsFor(flags);
+                        ptr.flags |= ModeFlags.getOpenFileFlagsFor(flags);
                         trunc = (flags & ModeFlags.TRUNC) != 0;
                     } else {
                         String m = arg1.convertToString().toString();
-                        ptr.flags = OpenFile.ioModestrFmode(runtime, m);
+                        ptr.flags |= OpenFile.ioModestrFmode(runtime, m);
                         trunc = m.length() > 0 && m.charAt(0) == 'w';
                     }
                     string = arg0.convertToString();
@@ -329,11 +334,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     break;
                 case 1:
                     string = arg0.convertToString();
-                    ptr.flags = string.isFrozen() ? OpenFile.READABLE : OpenFile.READWRITE;
+                    ptr.flags |= string.isFrozen() ? OpenFile.READABLE : OpenFile.READWRITE;
                     break;
                 case 0:
                     string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
-                    ptr.flags = OpenFile.READWRITE;
+                    ptr.flags |= OpenFile.READWRITE;
                     break;
                 default:
                     // should not be possible
