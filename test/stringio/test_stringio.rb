@@ -1032,6 +1032,32 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal "UTF-16LE", stringio_with_encoding.to_s.encoding.name
   end
 
+  def test_to_s_with_interpolation
+    content = "Hello, StringIO!"
+    stringio = StringIO.new(content)
+
+    assert_equal "Content: #{content}", "Content: #{stringio}"
+
+    assert_equal "Before #{content} After", "Before #{stringio} After"
+
+    empty_stringio = StringIO.new
+    assert_equal "Empty: ", "Empty: #{empty_stringio}"
+
+    utf16_content = content.encode("UTF-16LE")
+    stringio_with_encoding = StringIO.new(utf16_content)
+    assert_equal "UTF-16LE: #{utf16_content.encode('UTF-8')}", "UTF-16LE: #{stringio_with_encoding.to_s.encode('UTF-8')}"
+
+    assert_equal "UTF-16LE", stringio_with_encoding.to_s.encoding.name
+
+    stringio.pos = 7
+    assert_equal "Moved: #{content}", "Moved: #{stringio}"
+
+    stringio.close
+    assert_equal "Closed: #{content}", "Closed: #{stringio}"
+
+    assert_equal "Start #{content} Middle #{empty_stringio} End", "Start #{stringio} Middle #{empty_stringio} End"
+  end
+
   private
 
   def assert_string(content, encoding, str, mesg = nil)
