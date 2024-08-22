@@ -1319,6 +1319,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return string;
     }
 
+    @JRubyMethod(name = "to_s")
+    public IRubyObject to_s(ThreadContext context) {
+        RubyString string = ptr.string;
+        if (string == null) return context.nil;
+
+        return string;
+    }
+
     @JRubyMethod(name = "sync")
     public IRubyObject sync(ThreadContext context) {
         checkInitialized();

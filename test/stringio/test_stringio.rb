@@ -1010,6 +1010,28 @@ class TestStringIO < Test::Unit::TestCase
     end
   end
 
+  def test_to_s
+    content = "Hello, StringIO!"
+    stringio = StringIO.new(content)
+
+    assert_equal content, stringio.to_s
+    assert_equal content, stringio.string
+    assert_equal stringio.string, stringio.to_s
+
+    stringio.pos = 7
+    assert_equal content, stringio.to_s
+
+    stringio.close
+    assert_equal content, stringio.to_s
+
+    empty_stringio = StringIO.new
+    assert_equal "", empty_stringio.to_s
+
+    stringio_with_encoding = StringIO.new(content.encode("UTF-16LE"))
+    assert_equal content.encode("UTF-16LE"), stringio_with_encoding.to_s
+    assert_equal "UTF-16LE", stringio_with_encoding.to_s.encoding.name
+  end
+
   private
 
   def assert_string(content, encoding, str, mesg = nil)
