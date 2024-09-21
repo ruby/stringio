@@ -308,7 +308,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             int[] oflags = {0};
             int[] fmode = {0};
 
-            // TODO: replace with EncodingUtils#extractModeEncoding
             IRubyObject options = ArgsUtil.getOptionsArg(runtime, maybeOptions);
             IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
             if (!options.isNil()) {
