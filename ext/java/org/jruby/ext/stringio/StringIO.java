@@ -1690,11 +1690,10 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (len < 1) return null;
         switch (toUnsignedInt(bytes[p])) {
             case 0xEF:
-                if (len < 2) break;
-                if (toUnsignedInt(bytes[p + 1]) == 0xBB && len > 2) {
-                    if (toUnsignedInt(bytes[p + 2]) == 0xBF) {
-                        return callback.apply(context, UTF8Encoding.INSTANCE, 3);
-                    }
+                if (len < 3) break;
+                if (toUnsignedInt(bytes[p + 1]) == 0xBB && toUnsignedInt(bytes[p + 2]) == 0xBF) {
+                    return callback.apply(context, UTF8Encoding.INSTANCE, 3);
+                }
                 }
                 break;
 
