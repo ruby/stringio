@@ -1694,7 +1694,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (toUnsignedInt(bytes[p + 1]) == 0xBB && toUnsignedInt(bytes[p + 2]) == 0xBF) {
                     return callback.apply(context, UTF8Encoding.INSTANCE, 3);
                 }
-                }
                 break;
 
             case 0xFE:
