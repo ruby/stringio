@@ -1,5 +1,24 @@
 # News
 
+## 3.1.2 - 2024-11-07
+
+### Improvements
+
+  * JRuby: Added support for detecting encoding by BOM.
+    * GH-100
+    * GH-101
+
+### Fixes
+
+  * CRuby: Fixed a bug that unknown memory may be used by
+    `StringIO#ungetc`/`StringIO#ungetbyte`.
+    * https://hackerone.com/reports/2805165
+    * Reported by manun.
+
+### Thanks
+
+  * manun
+
 ## 3.1.1 - 2024-06-13
 
 ### Improvements
