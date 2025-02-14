@@ -1,5 +1,18 @@
 # News
 
+## 3.1.3 - 2025-02-14
+
+### Fixes
+
+  * JRuby: Fixed a bug that JRuby can't be started
+    * GH-112
+    * GH-113
+    * Reported by Karol Bucek
+
+### Thanks
+
+  * Karol Bucek
+
 ## 3.1.2 - 2024-11-07
 
 ### Improvements
