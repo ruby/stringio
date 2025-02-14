@@ -4,7 +4,7 @@
 
 ### Fixes
 
-  * JRuby: Fixed a bug that JRuby can't be started
+  * JRuby: Fixed a bug that JRuby may not be able to be started
     * GH-112
     * GH-113
     * Reported by Karol Bucek
