@@ -1529,7 +1529,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     static {
         MethodHandle cat, modify, substr;
-        MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
             cat = lookup.findVirtual(RubyString.class, "catWithCodeRange", MethodType.methodType(RubyString.class, RubyString.class));
             modify = lookup.findVirtual(RubyString.class, "modifyAndClearCodeRange", MethodType.methodType(void.class));
