@@ -596,6 +596,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             // Check the length every iteration, since
             // the block can modify this string.
             while (ptr.pos < bytes.length()) {
+                // check readability for each loop, since it could get closed
+                checkReadable();
                 block.yield(context, runtime.newFixnum(bytes.get(ptr.pos++) & 0xFF));
             }
         } finally {
@@ -1758,6 +1760,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             final byte[] stringBytes = string.getUnsafeBytes();
             int begin = string.getBegin();
             for (; ; ) {
+                // check readability for each loop, since it could get closed
+                checkReadable();
+
                 int pos = ptr.pos;
                 if (pos >= string.realSize()) return this;
 
