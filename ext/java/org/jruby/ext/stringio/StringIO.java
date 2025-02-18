@@ -61,7 +61,6 @@ import org.jruby.util.func.ObjectObjectIntFunction;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.Getline;
 import org.jruby.util.io.IOEncodable;
-import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
 import java.lang.invoke.MethodHandle;
@@ -137,7 +136,16 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public Encoding getEncoding() {
         StringIOData ptr = this.ptr;
         Encoding enc = ptr.enc;
-        return enc != null ? enc : ptr.string.getEncoding();
+        if (enc != null) {
+            return enc;
+        }
+
+        RubyString string = ptr.string;
+        if (!string.isNil()) {
+            return string.getEncoding();
+        }
+
+        return null;
     }
 
     public void setEncoding(Encoding enc) {
@@ -292,8 +300,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     // MRI: strio_init
     private void strioInit(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
-        RubyString string;
-        IRubyObject mode;
+        IRubyObject string = context.nil;
+        IRubyObject mode = context.nil;
 
         StringIOData ptr = this.ptr;
 
@@ -302,72 +310,62 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             IRubyObject maybeOptions = context.nil;
             switch (argc) {
                 case 1:
-                    maybeOptions = arg0;
+                    maybeOptions = ArgsUtil.getOptionsArg(runtime, arg0);
+                    if (maybeOptions.isNil()) {
+                        string = arg0;
+                    }
                     break;
                 case 2:
-                    maybeOptions = arg1;
+                    string = arg0;
+                    maybeOptions = ArgsUtil.getOptionsArg(runtime, arg1);
+                    if (maybeOptions.isNil()) {
+                        mode = arg1;
+                    }
                     break;
             }
-            Encoding encoding = null;
-
-            IRubyObject options = ArgsUtil.getOptionsArg(runtime, maybeOptions);
-            IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
-            if (!options.isNil()) {
+            if (!maybeOptions.isNil()) {
                 argc--;
+            }
+            Object vmodeAndVpermP = VMODE_VPERM_TL.get();
+            EncodingUtils.vmode(vmodeAndVpermP, mode);
+            IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
 
-                int[] fmode = {0};
-                Object vmodeAndVpermP = VMODE_VPERM_TL.get();
+            // switch to per-use oflags if it is ever used in the future
+            EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, maybeOptions, OFLAGS_UNUSED, FMODE_TL.get());
 
-                // switch to per-use oflags if it is ever used in the future
-                EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, options, OFLAGS_UNUSED, FMODE_TL.get());
+            // clear shared vmodeVperm
+            EncodingUtils.vmode(vmodeAndVpermP, null);
+            EncodingUtils.vperm(vmodeAndVpermP, null);
 
-                // clear shared vmodeVperm
-                EncodingUtils.vmode(vmodeAndVpermP, null);
-                EncodingUtils.vperm(vmodeAndVpermP, null);
+            ptr.flags = FMODE_TL.get()[0];
 
-                ptr.flags = fmode[0];
-                encoding = ioEncodable.enc;
+            if (!string.isNil()) {
+                string = string.convertToString();
+            } else if (argc == 0) {
+                string = RubyString.newEmptyString(runtime, runtime.getDefaultInternalEncoding());
             }
 
-            switch (argc) {
-                case 2:
-                    mode = arg1;
-                    final boolean trunc;
-                    if (mode instanceof RubyFixnum) {
-                        int flags = RubyFixnum.fix2int(mode);
-                        ptr.flags |= ModeFlags.getOpenFileFlagsFor(flags);
-                        trunc = (flags & ModeFlags.TRUNC) != 0;
-                    } else {
-                        String m = arg1.convertToString().toString();
-                        ptr.flags |= OpenFile.ioModestrFmode(runtime, m);
-                        trunc = m.length() > 0 && m.charAt(0) == 'w';
-                    }
-                    string = arg0.convertToString();
-                    if ((ptr.flags & OpenFile.WRITABLE) != 0 && string.isFrozen()) {
-                        throw runtime.newErrnoEACCESError("Permission denied");
-                    }
-                    if (trunc) {
-                        string.resize(0);
-                    }
-                    break;
-                case 1:
-                    string = arg0.convertToString();
-                    ptr.flags |= string.isFrozen() ? OpenFile.READABLE : OpenFile.READWRITE;
-                    break;
-                case 0:
-                    string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
-                    ptr.flags |= OpenFile.READWRITE;
-                    break;
-                default:
-                    // should not be possible
-                    throw runtime.newArgumentError(3, 2);
+            if (!string.isNil() && string.isFrozen()) {
+                if ((ptr.flags & OpenFile.WRITABLE) != 0) {
+                    throw runtime.newErrnoEACCESError("read-only string");
+                }
+            } else {
+                if (mode.isNil()) {
+                    ptr.flags |= OpenFile.WRITABLE;
+                }
             }
-
-            ptr.string = string;
-            ptr.enc = encoding;
+            if (!string.isNil() && (ptr.flags & OpenFile.TRUNC) != 0) {
+                ((RubyString) string).clear();
+            }
+            ptr.string = (RubyString) string;
+            if (argc == 1 && !string.isNil()) {
+                ptr.enc = ((RubyString) string).getEncoding();
+            } else {
+                ptr.enc = ioEncodable.enc;
+            }
             ptr.pos = 0;
             ptr.lineno = 0;
-            if ((ptr.flags & OpenFile.SETENC_BY_BOM) != 0) setEncodingByBOM(context);
+            if ((ptr.flags & OpenFile.SETENC_BY_BOM) != 0) set_encoding_by_bom(context);
             // funky way of shifting readwrite flags into object flags
             flags |= (ptr.flags & OpenFile.READWRITE) * (STRIO_READABLE / OpenFile.READABLE);
         } finally {
@@ -669,20 +667,25 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return context.runtime.newFixnum(c);
     }
 
+    // MRI: strio_substr
     // must be called under lock
     private RubyString strioSubstr(Ruby runtime, int pos, int len, Encoding enc) {
         StringIOData ptr = this.ptr;
 
         final RubyString string = ptr.string;
-        final ByteList stringBytes = string.getByteList();
         int rlen = string.size() - pos;
 
         if (len > rlen) len = rlen;
         if (len < 0) len = 0;
-
         if (len == 0) return RubyString.newEmptyString(runtime, enc);
-        string.setByteListShared(); // we only share the byte[] buffer but its easier this way
-        return RubyString.newStringShared(runtime, stringBytes.getUnsafeBytes(), stringBytes.getBegin() + pos, len, enc);
+        return encSubseq(runtime, string, pos, len, enc);
+    }
+
+    // MRI: enc_subseq
+    private static RubyString encSubseq(Ruby runtime, RubyString str, int pos, int len, Encoding enc) {
+        str = str.makeShared(runtime, pos, len);
+        str.setEncoding(enc);
+        return str;
     }
 
     private static final int CHAR_BIT = 8;
