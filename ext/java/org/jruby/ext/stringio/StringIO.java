@@ -1091,9 +1091,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 ByteList dataByteList = myString.getByteList();
                 byte[] dataBytes = dataByteList.getUnsafeBytes();
                 System.arraycopy(dataBytes, dataByteList.getBegin() + pos, strBytes, strByteList.getBegin(), len);
-                if (binary) {
-                    string.setEncoding(ASCIIEncoding.INSTANCE);
-                } else {
+                if (!binary) {
                     string.setEncoding(myString.getEncoding());
                 }
             }
