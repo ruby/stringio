@@ -33,6 +33,7 @@ package org.jruby.ext.stringio;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
 import org.jcodings.specific.UTF32BEEncoding;
@@ -1590,7 +1591,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (enc != encStr && enc != EncodingUtils.ascii8bitEncoding(runtime)
                     // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
                     && encStr != ASCIIEncoding.INSTANCE) {
-                str = EncodingUtils.strConvEnc(context, str, encStr, enc);
+                RubyString converted = EncodingUtils.strConvEnc(context, str, encStr, enc);
+                if (converted == str && encStr != ASCIIEncoding.INSTANCE && encStr != USASCIIEncoding.INSTANCE) { /* conversion failed */
+                    ptr.string.checkEncoding(str);
+                }
+                str = converted;
             }
             final ByteList strByteList = str.getByteList();
             len = str.size();
