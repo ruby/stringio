@@ -1610,6 +1610,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 }
             } else {
                 strioExtend(context, pos, len);
+                modifyString(ptr.string);
                 ByteList ptrByteList = myString.getByteList();
                 System.arraycopy(strByteList.getUnsafeBytes(), strByteList.getBegin(), ptrByteList.getUnsafeBytes(), ptrByteList.begin() + pos, len);
             }
