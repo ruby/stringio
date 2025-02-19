@@ -1409,7 +1409,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (locked) unlock(ptr);
         }
 
-        return len;
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod(name = "ungetc")
