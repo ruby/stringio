@@ -1431,7 +1431,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (len <= 0) EncodingUtils.encUintChr(context, cc, enc);
             enc.codeToMbc(cc, buf, 0);
             ungetbyteCommon(context, buf, 0, len);
-            return context.nil;
         } else {
             arg = arg.convertToString();
             enc = getEncoding();
@@ -1440,10 +1439,10 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (enc != enc2 && enc != ASCIIEncoding.INSTANCE) {
                 argStr = EncodingUtils.strConvEnc(context, argStr, enc2, enc);
             }
-            ByteList argBytes = argStr.getByteList();
-            ungetbyteCommon(context, argBytes.unsafeBytes(), argBytes.begin(), argBytes.realSize());
-            return context.nil;
+            ungetbyteCommon(context, argStr);
         }
+
+        return context.nil;
     }
 
     private void ungetbyteCommon(ThreadContext context, int c) {
@@ -1475,32 +1474,50 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         ungetbyteCommon(context, ungetByteList.unsafeBytes(), ungetByteList.begin(), ungetByteList.realSize());
     }
 
-    private void ungetbyteCommon(ThreadContext context, byte[] ungetBytes, int ungetBegin, int ungetLen) {
-        final int start; // = ptr.pos;
-
-        if (ungetLen == 0) return;
+    private void ungetbyteCommon(ThreadContext context, byte[] ungetBytes, int cp, int cl) {
+        if (cl == 0) return;
 
         StringIOData ptr = this.ptr;
 
         boolean locked = lock(context, ptr);
         try {
-            RubyString string = ptr.string;
-            string.modify();
+            int pos = ptr.pos, len, rest;
+            RubyString str = ptr.string;
+            ByteList strBytelist;
+            byte[] strBytes;
+            int s;
 
-            int pos = ptr.pos;
-            if (ungetLen > pos) {
-                start = 0;
-            } else {
-                start = pos - ungetLen;
+            len = str.size();
+            rest = pos - len;
+            if (cl > pos) {
+                int ex = cl - (rest < 0 ? pos : len);
+                str.modifyExpand(len + ex);
+                strBytelist = str.getByteList();
+                strBytes = strBytelist.unsafeBytes();
+                s = strBytelist.begin();
+                strBytelist.setRealSize(len + ex);
+                if (rest < 0) System.arraycopy(strBytes, s + pos, strBytes, s + cl, -rest);
+                pos = 0;
             }
-
-            ByteList byteList = string.getByteList();
-
-            if (isEndOfString()) byteList.length(Math.max(pos, ungetLen));
-
-            byteList.replace(start, pos - start, ungetBytes, ungetBegin, ungetLen);
-
-            ptr.pos = start;
+            else {
+                if (rest > 0) {
+                    str.modifyExpand(len + rest);
+                    strBytelist = str.getByteList();
+                    strBytelist.setRealSize(len + rest);
+                } else {
+                    strBytelist = str.getByteList();
+                }
+                strBytes = strBytelist.unsafeBytes();
+                s = strBytelist.begin();
+                if (rest > cl) Arrays.fill(strBytes, len, rest - cl, (byte) 0);
+                pos -= cl;
+            }
+            if (ungetBytes != null) {
+                System.arraycopy(ungetBytes, cp, strBytes, s + pos, cl);
+            } else {
+                System.arraycopy(strBytes, s, strBytes, s + pos, cl);
+            }
+            ptr.pos = pos;
         } finally {
             if (locked) unlock(ptr);
         }
