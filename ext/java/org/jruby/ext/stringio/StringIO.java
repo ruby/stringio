@@ -1546,13 +1546,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return context.nil;
     }
 
-    // MRI: strio_write
+    // MRI: strio_write_m
     @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         return RubyFixnum.newFixnum(runtime, stringIOWrite(context, runtime, arg));
     }
 
+    // MRI: strio_write_m
     @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         Ruby runtime = context.runtime;
@@ -1562,6 +1563,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return RubyFixnum.newFixnum(runtime, len);
     }
 
+    // MRI: strio_write_m
     @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
@@ -1572,6 +1574,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return RubyFixnum.newFixnum(runtime, len);
     }
 
+    // MRI: strio_write_m
     @JRubyMethod(name = "write", required = 1, rest = true)
     public IRubyObject write(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, -1);
