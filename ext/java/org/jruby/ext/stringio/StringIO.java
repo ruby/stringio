@@ -984,8 +984,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         try {
             RubyString string = ptr.string;
             final int olen = string.size();
-            if (pos + len > olen) {
-                string.resize(pos + len);
+            long newSize = (long) pos + len;
+            if (newSize > Integer.MAX_VALUE) {
+                throw context.runtime.newArgumentError("string size too big");
+            }
+            if (newSize > olen) {
+                string.resize((int) newSize);
                 if (pos > olen) {
                     modifyString(string);
                     ByteList ptrByteList = string.getByteList();
