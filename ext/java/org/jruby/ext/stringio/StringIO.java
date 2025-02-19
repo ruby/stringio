@@ -699,7 +699,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             skip[c] = m;
         }
         while ((--m) > 0) {
-            skip[pat[patPtr++]] = m;
+            skip[Byte.toUnsignedInt(pat[patPtr++])] = m;
         }
     }
 
@@ -716,7 +716,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 j--;
             }
             if (j < 0) return k + 1;
-            i += skip[big[i + bstart] & 0xFF];
+            i += skip[Byte.toUnsignedInt(big[i + bstart])];
         }
         return -1;
     }
@@ -762,9 +762,10 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private static final Getline.Callback<StringIO, IRubyObject> GETLINE = (context, self, rs, limit, chomp, block) -> {
-        if (self.isEndOfString()) return context.nil;
+        self.checkReadable();
 
         if (limit == 0) {
+            if (self.ptr.string == null) return context.nil;
             return RubyString.newEmptyString(context.runtime, self.getEncoding());
         }
 
@@ -913,7 +914,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                         p = rsByteList.getBegin();
                         bm_init_skip(skip, rsBytes, p, n);
                         if ((pos2 = bm_search(rsBytes, p, n, stringBytes, s, e - s, skip)) >= 0) {
-                            e = s + pos2 + n;
+                            e = s + pos2 + (chomp ? 0 : n);
                         }
                     }
                 }
