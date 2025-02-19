@@ -262,7 +262,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         super(runtime, klass);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context) {
         if (ptr == null) {
             ptr = new StringIOData();
@@ -270,11 +270,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         // does not dispatch quite right and is not really necessary for us
         //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        strioInit(context, 0, null, null);
+        strioInit(context, 0, null, null, null);
         return this;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
         if (ptr == null) {
             ptr = new StringIOData();
@@ -282,11 +282,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         // does not dispatch quite right and is not really necessary for us
         //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        strioInit(context, 1, arg0, null);
+        strioInit(context, 1, arg0, null, null);
         return this;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         if (ptr == null) {
             ptr = new StringIOData();
@@ -294,15 +294,27 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         // does not dispatch quite right and is not really necessary for us
         //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-        strioInit(context, 2, arg0, arg1);
+        strioInit(context, 2, arg0, arg1, null);
+        return this;
+    }
+
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
+    public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (ptr == null) {
+            ptr = new StringIOData();
+        }
+
+        // does not dispatch quite right and is not really necessary for us
+        //Helpers.invokeSuper(context, this, metaClass, "initialize", IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        strioInit(context, 3, arg0, arg1, arg2);
         return this;
     }
 
     // MRI: strio_init
-    private void strioInit(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1) {
+    private void strioInit(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         Ruby runtime = context.runtime;
         IRubyObject string = context.nil;
-        IRubyObject mode = context.nil;
+        IRubyObject vmode = context.nil;
 
         StringIOData ptr = this.ptr;
 
@@ -320,7 +332,15 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     string = arg0;
                     maybeOptions = ArgsUtil.getOptionsArg(runtime, arg1);
                     if (maybeOptions.isNil()) {
-                        mode = arg1;
+                        vmode = arg1;
+                    }
+                    break;
+                case 3:
+                    string = arg0;
+                    vmode = arg1;
+                    maybeOptions = ArgsUtil.getOptionsArg(runtime, arg2);
+                    if (maybeOptions.isNil()) {
+                        throw context.runtime.newArgumentError(argc, 0, 2);
                     }
                     break;
             }
@@ -328,16 +348,17 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 argc--;
             }
             Object vmodeAndVpermP = VMODE_VPERM_TL.get();
-            EncodingUtils.vmode(vmodeAndVpermP, mode);
+            EncodingUtils.vmode(vmodeAndVpermP, vmode);
             IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
+            int[] fmode = FMODE_TL.get();
 
             // switch to per-use oflags if it is ever used in the future
-            EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, maybeOptions, OFLAGS_UNUSED, FMODE_TL.get());
+            EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, maybeOptions, OFLAGS_UNUSED, fmode);
+            ptr.flags = fmode[0];
+            vmode = EncodingUtils.vmode(vmodeAndVpermP);
 
             // clear shared vmodeVperm
             clearVmodeVperm(vmodeAndVpermP);
-
-            ptr.flags = FMODE_TL.get()[0];
 
             if (!string.isNil()) {
                 string = string.convertToString();
@@ -350,7 +371,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     throw runtime.newErrnoEACCESError("read-only string");
                 }
             } else {
-                if (mode.isNil()) {
+                if (vmode.isNil()) {
                     ptr.flags |= OpenFile.WRITABLE;
                 }
             }
@@ -1257,15 +1278,15 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     // MRI: strio_reopen
-    @JRubyMethod(name = "reopen")
+    @JRubyMethod(name = "reopen", keywords = true)
     public IRubyObject reopen(ThreadContext context) {
         // reset the state
-        strioInit(context, 0, null, null);
+        strioInit(context, 0, null, null, null);
         return this;
     }
 
     // MRI: strio_reopen
-    @JRubyMethod(name = "reopen")
+    @JRubyMethod(name = "reopen", keywords = true)
     public IRubyObject reopen(ThreadContext context, IRubyObject arg0) {
         checkFrozen();
 
@@ -1274,17 +1295,27 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
 
         // reset the state
-        strioInit(context, 1, arg0, null);
+        strioInit(context, 1, arg0, null, null);
         return this;
     }
 
     // MRI: strio_reopen
-    @JRubyMethod(name = "reopen")
+    @JRubyMethod(name = "reopen", keywords = true)
     public IRubyObject reopen(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         checkFrozen();
 
         // reset the state
-        strioInit(context, 2, arg0, arg1);
+        strioInit(context, 2, arg0, arg1, null);
+        return this;
+    }
+
+    // MRI: strio_reopen
+    @JRubyMethod(name = "reopen", keywords = true)
+    public IRubyObject reopen(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        checkFrozen();
+
+        // reset the state
+        strioInit(context, 3, arg0, arg1, arg2);
         return this;
     }
 
