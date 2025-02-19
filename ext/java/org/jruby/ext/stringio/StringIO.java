@@ -55,6 +55,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.DataType;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.ByteList;
+import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.func.ObjectObjectIntFunction;
@@ -1655,7 +1656,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (enc != encStr && enc != ASCIIEncoding.INSTANCE && enc != USASCIIEncoding.INSTANCE) {
                 RubyString converted = EncodingUtils.strConvEnc(context, str, encStr, enc);
                 if (converted == str && encStr != ASCIIEncoding.INSTANCE && encStr != USASCIIEncoding.INSTANCE) { /* conversion failed */
-                    ptr.string.checkEncoding(str);
+                    rb_enc_check_hack(context, enc, str);
                 }
                 str = converted;
             }
@@ -1687,6 +1688,50 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
 
         return len;
+    }
+
+    /*
+    This hack inlines the JRuby version of rb_enc_check (RubString.checkEncoding) because it only supports str1 being
+    a true string. This breaks an expectation in StringIO test "test_write_encoding_conversion".
+
+    If the StringIO string is blank, logic downstream from "rb_enc_check" in "encoding_compatible_latter" will simply
+    choose the second encoding rather than fail as the test expects.
+
+    See discussion in https://github.com/ruby/stringio/pull/116.
+     */
+    private static void rb_enc_check_hack(ThreadContext context, Encoding enc, CodeRangeable str) {
+        CodeRangeable fakeCodeRangeable = new EncodingOnlyCodeRangeable(enc);
+        Encoding enc1 = StringSupport.areCompatible(fakeCodeRangeable, str);
+        if (enc1 == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                enc1 + " and " + str.getByteList().getEncoding());
+    }
+
+    private static class EncodingOnlyCodeRangeable implements CodeRangeable {
+        private final Encoding enc;
+
+        public EncodingOnlyCodeRangeable(Encoding enc) {this.enc = enc;}
+        @Override
+        public int getCodeRange() {return 0;}
+        @Override
+        public int scanForCodeRange() {return 0;}
+        @Override
+        public boolean isCodeRangeValid() {return false;}
+        @Override
+        public void setCodeRange(int codeRange) {}
+        @Override
+        public void clearCodeRange() {}
+        @Override
+        public void keepCodeRange() {}
+        @Override
+        public void modifyAndKeepCodeRange() {}
+        @Override
+        public Encoding checkEncoding(CodeRangeable other) {return null;}
+        @Override
+        public ByteList getByteList() {return new ByteList(0, enc);}
+        @Override
+        public void modify() {}
+        @Override
+        public void modify(int length) {}
     }
 
     @JRubyMethod
