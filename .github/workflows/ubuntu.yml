@@ -47,7 +47,6 @@ jobs:
       if: >-
         matrix.ruby != 'truffleruby-head'
       run: bundle exec rake
-      continue-on-error: ${{ startsWith(matrix.ruby, 'jruby') }}
     - name: Install gem
       run: |
         gem install pkg/*.gem
