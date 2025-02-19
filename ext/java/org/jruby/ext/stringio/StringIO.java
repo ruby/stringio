@@ -1649,9 +1649,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             final Encoding enc = getEncoding();
             if (enc == null) return 0;
             final Encoding encStr = str.getEncoding();
-            if (enc != encStr && enc != EncodingUtils.ascii8bitEncoding(runtime)
-                    // this is a hack because we don't seem to handle incoming ASCII-8BIT properly in transcoder
-                    && encStr != ASCIIEncoding.INSTANCE) {
+            if (enc != encStr && enc != ASCIIEncoding.INSTANCE && enc != USASCIIEncoding.INSTANCE) {
                 RubyString converted = EncodingUtils.strConvEnc(context, str, encStr, enc);
                 if (converted == str && encStr != ASCIIEncoding.INSTANCE && encStr != USASCIIEncoding.INSTANCE) { /* conversion failed */
                     ptr.string.checkEncoding(str);
