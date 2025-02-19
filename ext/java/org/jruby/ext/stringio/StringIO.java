@@ -342,7 +342,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (!string.isNil()) {
                 string = string.convertToString();
             } else if (argc == 0) {
-                string = RubyString.newEmptyString(runtime, runtime.getDefaultInternalEncoding());
+                string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
             }
 
             if (!string.isNil() && string.isFrozen()) {
