@@ -91,7 +91,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         int flags;
         volatile Object owner;
     }
-    StringIOData ptr;
+    private StringIOData ptr;
+
+    // MRI: get_strio, StringIO macro
+    private StringIOData getPtr() {
+        // equivalent to rb_io_taint_check without tainting
+        checkFrozen();
+        return ptr;
+    }
 
     private static final String
     STRINGIO_VERSION = "3.1.4";
@@ -135,7 +142,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     // mri: get_enc
     public Encoding getEncoding() {
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
         Encoding enc = ptr.enc;
         if (enc != null) {
             return enc;
@@ -150,7 +157,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     public void setEncoding(Encoding enc) {
-        ptr.enc = enc;
+        getPtr().enc = enc;
     }
 
     @JRubyMethod(name = "new", rest = true, meta = true)
@@ -250,7 +257,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             try {
                 val = block.yield(context, strio);
             } finally {
-                strio.ptr.string = null;
+                strio.getPtr().string = null;
                 strio.flags &= ~STRIO_READWRITE;
             }
         }
@@ -264,7 +271,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context) {
-        if (ptr == null) {
+        if (getPtr() == null) {
             ptr = new StringIOData();
         }
 
@@ -276,7 +283,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        if (ptr == null) {
+        if (getPtr() == null) {
             ptr = new StringIOData();
         }
 
@@ -288,7 +295,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        if (ptr == null) {
+        if (getPtr() == null) {
             ptr = new StringIOData();
         }
 
@@ -300,7 +307,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        if (ptr == null) {
+        if (getPtr() == null) {
             ptr = new StringIOData();
         }
 
@@ -316,7 +323,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         IRubyObject string = context.nil;
         IRubyObject vmode = context.nil;
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -404,7 +411,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         if (this == otherIO) return this;
 
-        ptr = otherIO.ptr;
+        ptr = otherIO.getPtr();
         flags = flags & ~STRIO_READWRITE | otherIO.flags & STRIO_READWRITE;
 
         return this;
@@ -412,7 +419,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod
     public IRubyObject binmode(ThreadContext context) {
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
         ptr.enc = EncodingUtils.ascii8bitEncoding(context.runtime);
         if (writable()) ptr.string.setEncoding(ptr.enc);
 
@@ -471,7 +478,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject close_read(ThreadContext context) {
         // ~ checkReadable() :
         checkInitialized();
-        if ( (ptr.flags & OpenFile.READABLE) == 0 ) {
+        if ( (getPtr().flags & OpenFile.READABLE) == 0 ) {
             throw context.runtime.newIOError("not opened for reading");
         }
         int flags = this.flags;
@@ -491,7 +498,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject close_write(ThreadContext context) {
         // ~ checkWritable() :
         checkInitialized();
-        if ( (ptr.flags & OpenFile.WRITABLE) == 0 ) {
+        if ( (getPtr().flags & OpenFile.WRITABLE) == 0 ) {
             throw context.runtime.newIOError("not opened for writing");
         }
         int flags = this.flags;
@@ -608,7 +615,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (!block.isGiven()) return enumeratorize(runtime, this, "each_byte");
 
         checkReadable();
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -642,11 +649,13 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = {"eof", "eof?"})
     public IRubyObject eof(ThreadContext context) {
         checkReadable();
+        StringIOData ptr = getPtr();
         if (ptr.pos < ptr.string.size()) return context.fals;
         return context.tru;
     }
 
     private boolean isEndOfString() {
+        StringIOData ptr = getPtr();
         return ptr.string == null || ptr.pos >= ptr.string.size();
     }
 
@@ -656,7 +665,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         if (isEndOfString()) return context.nil;
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -679,7 +688,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (isEndOfString()) return context.nil;
 
         int c;
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
         boolean locked = lock(context, ptr);
         try {
             c = ptr.string.getByteList().get(ptr.pos++) & 0xFF;
@@ -693,7 +702,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     // MRI: strio_substr
     // must be called under lock
     private RubyString strioSubstr(Ruby runtime, int pos, int len, Encoding enc) {
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         final RubyString string = ptr.string;
         int rlen = string.size() - pos;
@@ -744,25 +753,25 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context) {
-        if (ptr.string == null) return context.nil;
+        if (getPtr().string == null) return context.nil;
         return Getline.getlineCall(context, GETLINE, this, getEncoding());
     }
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject arg0) {
-        if (ptr.string == null) return context.nil;
+        if (getPtr().string == null) return context.nil;
         return Getline.getlineCall(context, GETLINE, this, getEncoding(), arg0);
     }
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        if (ptr.string == null) return context.nil;
+        if (getPtr().string == null) return context.nil;
         return Getline.getlineCall(context, GETLINE, this, getEncoding(), arg0, arg1);
     }
 
     @JRubyMethod(name = "gets", writes = FrameField.LASTLINE)
     public IRubyObject gets(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        if (ptr.string == null) return context.nil;
+        if (getPtr().string == null) return context.nil;
         return Getline.getlineCall(context, GETLINE, this, getEncoding(), arg0, arg1, arg2);
     }
 
@@ -786,7 +795,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         self.checkReadable();
 
         if (limit == 0) {
-            if (self.ptr.string == null) return context.nil;
+            if (self.getPtr().string == null) return context.nil;
             return RubyString.newEmptyString(context.runtime, self.getEncoding());
         }
 
@@ -802,7 +811,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private static final Getline.Callback<StringIO, StringIO> GETLINE_YIELD = (context, self, rs, limit, chomp, block) -> {
         IRubyObject line;
 
-        StringIOData ptr = self.ptr;
+        StringIOData ptr = self.getPtr();
         if (ptr.string == null || ptr.pos > ptr.string.size()) {
             return self;
         }
@@ -825,7 +834,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         RubyArray<IRubyObject> ary = (RubyArray<IRubyObject>) context.runtime.newArray();
         IRubyObject line;
 
-        StringIOData ptr = self.ptr;
+        StringIOData ptr = self.getPtr();
         if (ptr.string == null || ptr.pos > ptr.string.size()) {
             return null;
         }
@@ -857,7 +866,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             return context.nil;
         }
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
         Encoding enc = getEncoding();
 
         boolean locked = lock(context, ptr);
@@ -961,19 +970,19 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = {"length", "size"})
     public IRubyObject length(ThreadContext context) {
         checkInitialized();
-        RubyString myString = ptr.string;
+        RubyString myString = getPtr().string;
         if (myString == null) return RubyFixnum.zero(context.runtime);
         return getRuntime().newFixnum(myString.size());
     }
 
     @JRubyMethod(name = "lineno")
     public IRubyObject lineno(ThreadContext context) {
-        return context.runtime.newFixnum(ptr.lineno);
+        return context.runtime.newFixnum(getPtr().lineno);
     }
 
     @JRubyMethod(name = "lineno=", required = 1)
     public IRubyObject set_lineno(ThreadContext context, IRubyObject arg) {
-        ptr.lineno = RubyNumeric.fix2int(arg);
+        getPtr().lineno = RubyNumeric.fix2int(arg);
 
         return context.nil;
     }
@@ -982,7 +991,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject pos(ThreadContext context) {
         checkInitialized();
 
-        return context.runtime.newFixnum(ptr.pos);
+        return context.runtime.newFixnum(getPtr().pos);
     }
 
     @JRubyMethod(name = "pos=", required = 1)
@@ -995,13 +1004,13 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         if (p > Integer.MAX_VALUE) throw getRuntime().newArgumentError("JRuby does not support StringIO larger than " + Integer.MAX_VALUE + " bytes");
 
-        ptr.pos = (int)p;
+        getPtr().pos = (int)p;
 
         return arg;
     }
 
     private void strioExtend(ThreadContext context, int pos, int len) {
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1040,12 +1049,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkModifiable();
         if (ch instanceof RubyString) {
-            if (ptr.string == null) return context.nil;
+            if (getPtr().string == null) return context.nil;
             str = substrString((RubyString) ch, str, runtime);
         }
         else {
             byte c = RubyNumeric.num2chr(ch);
-            if (ptr.string == null) return context.nil;
+            if (getPtr().string == null) return context.nil;
             str = RubyString.newString(runtime, new byte[]{c});
         }
         write(context, str);
@@ -1077,7 +1086,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         IRubyObject str = context.nil;
         boolean binary = false;
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
         int pos = ptr.pos;
 
         boolean locked = lock(context, ptr);
@@ -1173,7 +1182,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @SuppressWarnings("fallthrough")
     private RubyString preadCommon(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject str = context.nil;
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
         Ruby runtime = context.runtime;
         int offset;
         final RubyString string;
@@ -1288,7 +1297,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     // MRI: strio_reopen
     @JRubyMethod(name = "reopen", keywords = true)
     public IRubyObject reopen(ThreadContext context, IRubyObject arg0) {
-        checkFrozen();
+        checkModifiable();
 
         if (!(arg0 instanceof RubyString)) {
             return initialize_copy(context, arg0);
@@ -1302,7 +1311,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     // MRI: strio_reopen
     @JRubyMethod(name = "reopen", keywords = true)
     public IRubyObject reopen(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        checkFrozen();
+        checkModifiable();
 
         // reset the state
         strioInit(context, 2, arg0, arg1, null);
@@ -1312,7 +1321,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     // MRI: strio_reopen
     @JRubyMethod(name = "reopen", keywords = true)
     public IRubyObject reopen(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        checkFrozen();
+        checkModifiable();
 
         // reset the state
         strioInit(context, 3, arg0, arg1, arg2);
@@ -1323,7 +1332,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject rewind(ThreadContext context) {
         checkInitialized();
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1347,7 +1356,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private RubyFixnum seekCommon(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1) {
-        checkFrozen();
+        checkModifiable();
 
         Ruby runtime = context.runtime;
 
@@ -1360,7 +1369,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkOpen();
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1390,7 +1399,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = "string=", required = 1)
     public IRubyObject set_string(ThreadContext context, IRubyObject arg) {
         checkFrozen();
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1407,7 +1416,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = "string")
     public IRubyObject string(ThreadContext context) {
-        RubyString string = ptr.string;
+        RubyString string = getPtr().string;
         if (string == null) return context.nil;
 
         return string;
@@ -1424,7 +1433,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         checkWritable();
 
         int l = RubyFixnum.fix2int(len);
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
         RubyString string = ptr.string;
 
         boolean locked = lock(context, ptr);
@@ -1456,7 +1465,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         checkModifiable();
         checkReadable();
 
-        if (ptr.string == null) return context.nil;
+        if (getPtr().string == null) return context.nil;
 
         if (arg.isNil()) return arg;
         if (arg instanceof RubyInteger) {
@@ -1483,7 +1492,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private void ungetbyteCommon(ThreadContext context, int c) {
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1514,7 +1523,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private void ungetbyteCommon(ThreadContext context, byte[] ungetBytes, int cp, int cl) {
         if (cl == 0) return;
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1568,7 +1577,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (arg.isNil()) return arg;
 
         checkModifiable();
-        if (ptr.string == null) return context.nil;
+        if (getPtr().string == null) return context.nil;
 
         if (arg instanceof RubyInteger) {
             ungetbyteCommon(context, ((RubyInteger) ((RubyInteger) arg).op_mod(context, 256)).getIntValue());
@@ -1678,7 +1687,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         RubyString str = arg.asString();
         int len, olen;
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1783,7 +1792,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             }
         }
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1819,12 +1828,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod
     public IRubyObject set_encoding_by_bom(ThreadContext context) {
-        if (setEncodingByBOM(context) == null) return context.nil;
+        StringIOData ptr = getPtr();
+
+        if (setEncodingByBOM(context, ptr) == null) return context.nil;
 
         return context.runtime.getEncodingService().convertEncodingToRubyEncoding(ptr.enc);
     }
 
-    private Encoding setEncodingByBOM(ThreadContext context) {
+    private Encoding setEncodingByBOM(ThreadContext context, StringIOData ptr) {
         Encoding enc = detectBOM(context, ptr.string, (ctx, enc2, bomlen) -> {
             ptr.pos = bomlen;
             if (writable()) {
@@ -1900,7 +1911,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkReadable();
 
-        StringIOData ptr = this.ptr;
+        StringIOData ptr = this.getPtr();
 
         boolean locked = lock(context, ptr);
         try {
@@ -2148,25 +2159,19 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return GenericWritable.puts(context, this, args);
     }
 
-    /* rb: check_modifiable */
-    public void checkFrozen() {
-        super.checkFrozen();
-        checkInitialized();
-    }
-
     private boolean readable() {
         return (flags & STRIO_READABLE) != 0
-                && (ptr.flags & OpenFile.READABLE) != 0;
+                && (getPtr().flags & OpenFile.READABLE) != 0;
     }
 
     private boolean writable() {
         return (flags & STRIO_WRITABLE) != 0
-                && (ptr.flags & OpenFile.WRITABLE) != 0;
+                && (getPtr().flags & OpenFile.WRITABLE) != 0;
     }
 
     private boolean closed() {
         return !((flags & STRIO_READWRITE) != 0
-                && (ptr.flags & OpenFile.READWRITE) != 0);
+                && (getPtr().flags & OpenFile.READWRITE) != 0);
     }
 
     /* rb: readable */
@@ -2189,11 +2194,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     private void checkModifiable() {
         checkFrozen();
-        if (ptr.string.isFrozen()) throw getRuntime().newIOError("not modifiable string");
+        if (getPtr().string.isFrozen()) throw getRuntime().newIOError("not modifiable string");
     }
 
     private void checkInitialized() {
-        if (ptr == null) {
+        if (getPtr() == null) {
             throw getRuntime().newIOError("uninitialized stream");
         }
     }
