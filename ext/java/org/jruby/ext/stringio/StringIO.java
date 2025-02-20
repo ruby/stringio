@@ -1356,8 +1356,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private RubyFixnum seekCommon(ThreadContext context, int argc, IRubyObject arg0, IRubyObject arg1) {
-        checkModifiable();
-
         Ruby runtime = context.runtime;
 
         IRubyObject whence = context.nil;
@@ -1367,9 +1365,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             whence = arg1;
         }
 
-        checkOpen();
-
         StringIOData ptr = this.getPtr();
+
+        checkOpen();
 
         boolean locked = lock(context, ptr);
         try {
