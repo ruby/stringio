@@ -1633,19 +1633,22 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private static final MethodHandle CAT_WITH_CODE_RANGE;
     private static final MethodHandle MODIFY_AND_CLEAR_CODE_RANGE;
     private static final MethodHandle SUBSTR_ENC;
+    private static final MethodHandle CHECK_ENCODING;
 
     static {
-        MethodHandle cat, modify, substr;
+        MethodHandle cat, modify, substr, checkEncoding;
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
             cat = lookup.findVirtual(RubyString.class, "catWithCodeRange", MethodType.methodType(RubyString.class, RubyString.class));
             modify = lookup.findVirtual(RubyString.class, "modifyAndClearCodeRange", MethodType.methodType(void.class));
             substr = lookup.findVirtual(RubyString.class, "substrEnc", MethodType.methodType(IRubyObject.class, Ruby.class, int.class, int.class));
+            checkEncoding = lookup.findStatic(RubyEncoding.class, "checkEncoding", MethodType.methodType(void.class, ThreadContext.class, Encoding.class, CodeRangeable.class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             try {
                 cat = lookup.findVirtual(RubyString.class, "cat19", MethodType.methodType(RubyString.class, RubyString.class));
                 modify = lookup.findVirtual(RubyString.class, "modify19", MethodType.methodType(void.class));
                 substr = lookup.findVirtual(RubyString.class, "substr19", MethodType.methodType(IRubyObject.class, Ruby.class, int.class, int.class));
+                checkEncoding = lookup.findStatic(StringIO.class, "checkEncoding", MethodType.methodType(void.class, ThreadContext.class, Encoding.class, CodeRangeable.class));
             } catch (NoSuchMethodException | IllegalAccessException ex2) {
                 throw new ExceptionInInitializerError(ex2);
             }
@@ -1654,6 +1657,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         CAT_WITH_CODE_RANGE = cat;
         MODIFY_AND_CLEAR_CODE_RANGE = modify;
         SUBSTR_ENC = substr;
+        CHECK_ENCODING = checkEncoding;
     }
 
     private static void catString(RubyString myString, RubyString str) {
@@ -1698,7 +1702,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (enc != encStr && enc != ASCIIEncoding.INSTANCE && enc != USASCIIEncoding.INSTANCE) {
                 RubyString converted = EncodingUtils.strConvEnc(context, str, encStr, enc);
                 if (converted == str && encStr != ASCIIEncoding.INSTANCE && encStr != USASCIIEncoding.INSTANCE) { /* conversion failed */
-                    rb_enc_check_hack(context, enc, str);
+                    rb_enc_check(context, enc, str);
                 }
                 str = converted;
             }
@@ -1732,16 +1736,20 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return len;
     }
 
-    /*
-    This hack inlines the JRuby version of rb_enc_check (RubString.checkEncoding) because it only supports str1 being
-    a true string. This breaks an expectation in StringIO test "test_write_encoding_conversion".
+    private static void rb_enc_check(ThreadContext context, Encoding enc, CodeRangeable str) {
+        try {
+            CHECK_ENCODING.invokeExact(context, enc, str);
+        } catch (Throwable t) {
+            Helpers.throwException(t);
+        }
+    }
 
-    If the StringIO string is blank, logic downstream from "rb_enc_check" in "encoding_compatible_latter" will simply
-    choose the second encoding rather than fail as the test expects.
-
-    See discussion in https://github.com/ruby/stringio/pull/116.
+    /**
+     * Fallback version of rb_enc_check logic for JRuby prior to 9.4.13.0 that did not have a version accepting enc.
+     *
+     * See discussion in https://github.com/ruby/stringio/pull/116.
      */
-    private static void rb_enc_check_hack(ThreadContext context, Encoding enc, CodeRangeable str) {
+    private static void checkEncoding(ThreadContext context, Encoding enc, CodeRangeable str) {
         CodeRangeable fakeCodeRangeable = new EncodingOnlyCodeRangeable(enc);
         Encoding enc1 = StringSupport.areCompatible(fakeCodeRangeable, str);
         if (enc1 == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
