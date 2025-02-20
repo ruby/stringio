@@ -25,7 +25,7 @@ class TestStringIO < Test::Unit::TestCase
     s.ungetc '#'
 
     # We mutated b, so a should not be mutated
-    assert_equal "x", a[0]
+    assert_equal("x", a[0])
   end
 
   def test_version
