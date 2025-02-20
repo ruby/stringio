@@ -1,5 +1,17 @@
 # News
 
+## 3.1.4 - 2025-02-20
+
+### Improvements
+
+  * JRuby: Improved compatibility with CRuby.
+    * GH-116
+
+### Fixes
+
+  * CRuby: Fixed a bug that `StringIO` may mutate a shared string.
+    * GH-117
+
 ## 3.1.3 - 2025-02-14
 
 ### Fixes
