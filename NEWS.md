@@ -1,5 +1,14 @@
 # News
 
+## 3.1.5 - 2025-02-21
+
+### Improvements
+
+  * JRuby: Improved compatibility with CRuby for `StringIO#seek` with
+    frozen string.
+    * GH-119
+    * GH-121
+
 ## 3.1.4 - 2025-02-20
 
 ### Improvements
