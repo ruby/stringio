@@ -4,6 +4,8 @@ require "rdoc/task"
 
 name = "stringio"
 
+helper = Bundler::GemHelper.instance
+
 case RUBY_ENGINE
 when "jruby"
   require 'rake/javaextensiontask'
@@ -13,30 +15,24 @@ when "jruby"
     ext.target_version = '1.8'
     ext.ext_dir = 'ext/java'
   end
+  libs = [extask.lib_dir]
 
   task :build => "#{extask.lib_dir}/#{extask.name}.jar"
 when "ruby"
-  require 'rake/extensiontask'
-  extask = Rake::ExtensionTask.new(name) do |x|
-    x.lib_dir << "/#{RUBY_VERSION}/#{x.platform}"
-  end
+  require "ruby-core/extensiontask"
+  libs = RubyCore::ExtensionTask.new(helper.gemspec).libs
+  task :test => :compile
 else
   task :compile
 end
 
 Rake::TestTask.new(:test) do |t|
-  if extask
-    ENV["RUBYOPT"] = "-I" + [extask.lib_dir, "test/lib"].join(File::PATH_SEPARATOR)
-    t.libs << extask.lib_dir
-  else
-    ENV["RUBYOPT"] = "-Itest/lib"
-  end
-  t.libs << "test/lib"
+  t.libs.push(*libs, "test/lib")
+  ENV["RUBYOPT"] = "-I" + t.libs.join(File::PATH_SEPARATOR)
   t.ruby_opts << "-rhelper"
   t.test_files = FileList["test/**/test_*.rb"]
 end
 
-helper = Bundler::GemHelper.instance
 RDoc::Task.new do |rdoc|
   rdoc.rdoc_files.push("COPYING", "LICENSE.txt",
                        "NEWS.md", "README.md",

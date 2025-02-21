@@ -8,4 +8,5 @@ group :development do
   gem 'ruby-maven', :platforms => :jruby
   gem 'test-unit'
   gem 'test-unit-ruby-core'
+  gem 'ruby-core-tasks', github: 'ruby/ruby-core-tasks'
 end
