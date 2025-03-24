@@ -1696,13 +1696,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         try {
             final Encoding enc = getEncoding();
             if (enc == null) return 0;
-            final Encoding encStr = str.getEncoding();
+            Encoding encStr = str.getEncoding();
             if (enc != encStr && enc != ASCIIEncoding.INSTANCE && enc != USASCIIEncoding.INSTANCE) {
                 RubyString converted = EncodingUtils.strConvEnc(context, str, encStr, enc);
                 if (converted == str && encStr != ASCIIEncoding.INSTANCE && encStr != USASCIIEncoding.INSTANCE) { /* conversion failed */
                     rb_enc_check(context, enc, str);
                 }
                 str = converted;
+                encStr = str.getEncoding();
             }
             final ByteList strByteList = str.getByteList();
             len = str.size();
