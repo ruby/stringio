@@ -1662,7 +1662,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         try {
             RubyString unused = (RubyString) CAT_WITH_CODE_RANGE.invokeExact(myString, str);
         } catch (Throwable t) {
-            throw new RuntimeException(t);
+            Helpers.throwException(t);
         }
     }
 
