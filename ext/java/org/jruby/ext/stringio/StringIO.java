@@ -2201,8 +2201,13 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private void checkModifiable() {
-        checkFrozen();
-        if (getPtr().string.isFrozen()) throw getRuntime().newIOError("not modifiable string");
+        if (getPtr().string == null || getPtr().string.isNil()) {
+            /* Null device StringIO */
+        } else if (getPtr().string.isFrozen()) {
+            throw getRuntime().newIOError("not modifiable string");
+        } else {
+            getPtr().string.modify();
+        }
     }
 
     private void checkInitialized() {
