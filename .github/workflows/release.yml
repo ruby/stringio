@@ -1,8 +1,7 @@
 name: Release
 on:
   push:
-    tags:
-      - "*"
+  pull_request:
 jobs:
   github:
     name: GitHub
@@ -10,12 +9,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Create a release
+      - name: Extract release note
         run: |
           ruby \
             -e 'print("## stringio "); \
                 puts(ARGF.read.split(/^## /)[1])' \
-            NEWS.md > release-note.md
+            NEWS.md | tee release-note.md
+      - name: Create a release
+        if: github.ref_type == 'tag'
+        run: |
           title="$(head -n1 release-note.md | sed -e 's/^## //')"
           tail -n +2 release-note.md > release-note-without-version.md
           gh release create ${GITHUB_REF_NAME} \
@@ -47,6 +49,8 @@ jobs:
         run: |
           bundle exec rake compile
       - uses: rubygems/configure-rubygems-credentials@v1.0.0
+        if: github.ref_type == 'tag'
       - name: Push gems
+        if: github.ref_type == 'tag'
         run: |
           bundle exec rake release:rubygem_push
