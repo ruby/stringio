@@ -1,5 +1,16 @@
 # News
 
+## 3.1.6 - 2025-03-25
+
+### Fixes
+
+  * CRuby: Fix SEGV at unget to a null device StringIO
+  * JRuby:
+    * Fix NullPointerException at unget to a null device StringIO
+    * Use proper checkEncoding signature
+    * Update strioWrite logic to match CRuby
+    * GH-124
+
 ## 3.1.5 - 2025-02-21
 
 ### Improvements
