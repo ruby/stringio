@@ -1640,13 +1640,13 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             cat = lookup.findVirtual(RubyString.class, "catWithCodeRange", MethodType.methodType(RubyString.class, RubyString.class));
             modify = lookup.findVirtual(RubyString.class, "modifyAndClearCodeRange", MethodType.methodType(void.class));
             substr = lookup.findVirtual(RubyString.class, "substrEnc", MethodType.methodType(IRubyObject.class, Ruby.class, int.class, int.class));
-            checkEncoding = lookup.findStatic(RubyEncoding.class, "checkEncoding", MethodType.methodType(void.class, ThreadContext.class, Encoding.class, CodeRangeable.class));
+            checkEncoding = lookup.findStatic(RubyEncoding.class, "checkEncoding", MethodType.methodType(Encoding.class, ThreadContext.class, Encoding.class, CodeRangeable.class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             try {
                 cat = lookup.findVirtual(RubyString.class, "cat19", MethodType.methodType(RubyString.class, RubyString.class));
                 modify = lookup.findVirtual(RubyString.class, "modify19", MethodType.methodType(void.class));
                 substr = lookup.findVirtual(RubyString.class, "substr19", MethodType.methodType(IRubyObject.class, Ruby.class, int.class, int.class));
-                checkEncoding = lookup.findStatic(StringIO.class, "checkEncoding", MethodType.methodType(void.class, ThreadContext.class, Encoding.class, CodeRangeable.class));
+                checkEncoding = lookup.findStatic(StringIO.class, "checkEncoding", MethodType.methodType(Encoding.class, ThreadContext.class, Encoding.class, CodeRangeable.class));
             } catch (NoSuchMethodException | IllegalAccessException ex2) {
                 throw new ExceptionInInitializerError(ex2);
             }
@@ -1737,7 +1737,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     private static void rb_enc_check(ThreadContext context, Encoding enc, CodeRangeable str) {
         try {
-            CHECK_ENCODING.invokeExact(context, enc, str);
+            Encoding ignored = (Encoding) CHECK_ENCODING.invokeExact(context, enc, str);
         } catch (Throwable t) {
             Helpers.throwException(t);
         }
@@ -1748,11 +1748,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
      *
      * See discussion in https://github.com/ruby/stringio/pull/116.
      */
-    private static void checkEncoding(ThreadContext context, Encoding enc, CodeRangeable str) {
-        CodeRangeable fakeCodeRangeable = new EncodingOnlyCodeRangeable(enc);
-        Encoding enc1 = StringSupport.areCompatible(fakeCodeRangeable, str);
-        if (enc1 == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
-                enc1 + " and " + str.getByteList().getEncoding());
+    private static Encoding checkEncoding(ThreadContext context, Encoding encoding, CodeRangeable str) {
+        CodeRangeable fakeCodeRangeable = new EncodingOnlyCodeRangeable(encoding);
+        Encoding enc = StringSupport.areCompatible(fakeCodeRangeable, str);
+        if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                enc + " and " + str.getByteList().getEncoding());
+        return enc;
     }
 
     private static class EncodingOnlyCodeRangeable implements CodeRangeable {
