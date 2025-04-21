@@ -1,5 +1,18 @@
 # News
 
+## 3.1.7 - 2025-04-21
+
+### Improvements
+
+  * CRuby: Added support for `rb_io_mode_t` that will be introduced in
+    Ruby 3.5 or later.
+    * GH-129
+    * Patch by Samuel Williams
+
+### Thanks
+
+  * Samuel Williams
+
 ## 3.1.6 - 2025-03-25
 
 ### Fixes
