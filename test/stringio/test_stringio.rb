@@ -304,7 +304,7 @@ class TestStringIO < Test::Unit::TestCase
     f = StringIO.new()
     f.set_encoding("ISO-8859-16:ISO-8859-1")
     assert_equal(Encoding::ISO_8859_16, f.external_encoding)
-    assert_equal(Encoding::ISO_8859_16, f.string.encoding)
+    assert_equal(Encoding::UTF_8, f.string.encoding)
     assert_nil(f.internal_encoding)
   end
 

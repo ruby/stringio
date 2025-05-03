@@ -278,9 +278,6 @@ set_encoding_by_bom(struct StringIO *ptr)
     if (idx) {
 	extenc = rb_enc_from_index(idx);
 	ptr->pos = bomlen;
-	if (ptr->flags & FMODE_WRITABLE) {
-	    rb_enc_associate_index(ptr->string, idx);
-	}
     }
     ptr->enc = extenc;
     return extenc;
@@ -696,9 +693,6 @@ strio_binmode(VALUE self)
     rb_encoding *enc = rb_ascii8bit_encoding();
 
     ptr->enc = enc;
-    if (WRITABLE(self)) {
-	rb_enc_associate(ptr->string, enc);
-    }
     return self;
 }
 
@@ -1859,9 +1853,6 @@ strio_set_encoding(int argc, VALUE *argv, VALUE self)
 	}
     }
     ptr->enc = enc;
-    if (!NIL_P(ptr->string) && WRITABLE(self)) {
-	rb_enc_associate(ptr->string, enc);
-    }
 
     return self;
 }
