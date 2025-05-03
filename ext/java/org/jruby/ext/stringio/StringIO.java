@@ -421,7 +421,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject binmode(ThreadContext context) {
         StringIOData ptr = this.getPtr();
         ptr.enc = EncodingUtils.ascii8bitEncoding(context.runtime);
-        if (writable()) ptr.string.setEncoding(ptr.enc);
 
         return this;
     }
@@ -1809,10 +1808,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
             // in read-only mode, StringIO#set_encoding no longer sets the encoding
             RubyString string = ptr.string;
-            if (string != null && writable() && string.getEncoding() != enc) {
-                string.modify();
-                string.setEncoding(enc);
-            }
         } finally {
             if (locked) unlock(ptr);
         }
@@ -1847,9 +1842,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private Encoding setEncodingByBOM(ThreadContext context, StringIOData ptr) {
         Encoding enc = detectBOM(context, ptr.string, (ctx, enc2, bomlen) -> {
             ptr.pos = bomlen;
-            if (writable()) {
-                ptr.string.setEncoding(enc2);
-            }
             return enc2;
         });
         ptr.enc = enc;
