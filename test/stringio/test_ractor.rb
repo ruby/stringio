@@ -9,8 +9,8 @@ class TestStringIOInRactor < Test::Unit::TestCase
   def test_ractor
     assert_in_out_err([], <<-"end;", ["true"], [])
       class Ractor
-        alias value take
-      end unless Ractor.method_defined? :value # compat with Ruby 3.4 and olders
+        alias value take unless method_defined? :value # compat with Ruby 3.4 and olders
+      end
 
       require "stringio"
       $VERBOSE = nil
