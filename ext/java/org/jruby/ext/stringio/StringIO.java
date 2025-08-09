@@ -1378,7 +1378,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     offset += ptr.pos;
                     break;
                 case 2:
-                    offset += ptr.string.size();
+                    if (ptr.string == null) {
+                        offset += 0;
+                    } else {
+                        offset += ptr.string.size();
+                    }
                     break;
                 default:
                     throw runtime.newErrnoEINVALError("invalid whence");
