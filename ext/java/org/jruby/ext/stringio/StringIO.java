@@ -655,8 +655,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private boolean isEndOfString() {
+        return isOutside(ptr.pos);
+    }
+
+    private boolean isOutside(int pos) {
         StringIOData ptr = getPtr();
-        return ptr.string == null || ptr.pos >= ptr.string.size();
+        return ptr.string == null || pos >= ptr.string.size();
     }
 
     @JRubyMethod(name = "getc")
@@ -1107,9 +1111,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                         if (len < 0) {
                             throw runtime.newArgumentError("negative length " + len + " given");
                         }
-                        if (len > 0 && isEndOfString()) {
+                        if (isEndOfString()) {
                             if (!str.isNil()) ((RubyString) str).resize(0);
-                            return context.nil;
+                            return len > 0 ? context.nil : runtime.newString();
                         }
                         binary = true;
                         break;
@@ -1224,8 +1228,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 throw runtime.newErrnoEINVALError("pread: Invalid offset argument");
             }
 
-            RubyString myString = ptr.string;
-            if (offset >= myString.size()) {
+            if (isOutside(offset)) {
                 throw context.runtime.newEOFError();
             }
 
@@ -1234,6 +1237,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             }
 
             string = (RubyString) str;
+            RubyString myString = ptr.string;
             int rest = myString.size() - offset;
             if (len > rest) len = rest;
             string.resize(len);
