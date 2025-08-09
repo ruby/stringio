@@ -650,7 +650,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject eof(ThreadContext context) {
         checkReadable();
         StringIOData ptr = getPtr();
-        if (ptr.pos < ptr.string.size()) return context.fals;
+        if (!isEndOfString()) return context.fals;
         return context.tru;
     }
 
