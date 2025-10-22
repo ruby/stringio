@@ -223,7 +223,7 @@ strio_s_allocate(VALUE klass)
 
 /*
  * call-seq:
- *   self.new(string = '', mode = 'r+') -> new_stringio
+ *   StringIO.new(string = '', mode = 'r+') -> new_stringio
  *
  * Returns a new \StringIO instance formed from +string+ and +mode+;
  * the instance should be closed when no longer needed:
