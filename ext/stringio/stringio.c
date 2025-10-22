@@ -370,19 +370,18 @@ strio_finalize(VALUE self)
 
 /*
  * call-seq:
- *   self.open(string = '', mode = 'r+') -> new_stringio
- *   self.open(string = '', mode = 'r+') {|strio| ... } -> object
+ *   StringIO.open(string = '', mode = 'r+') -> new_stringio
+ *   StringIO.open(string = '', mode = 'r+') {|strio| ... } -> object
  *
- * Creates new \StringIO instance by calling <tt>StringIO.new(string, mode)</tt>;
- * see StringIO.new.
+ * Creates new \StringIO instance by calling <tt>StringIO.new(string, mode)</tt>.
  *
  * With no block given, returns the new instance:
  *
  *   strio = StringIO.open # => #<StringIO>
  *
- * With a block given, calls the block with the new instance,
- * closes the instance on block exit,
- * and returns the block's value:
+ * With a block given, calls the block with the new instance
+ * and returns the block's value;
+ * closes the instance on block exit:
  *
  *   StringIO.open('foo') {|strio| strio.string.upcase } # => "FOO"
  *
