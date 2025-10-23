@@ -537,11 +537,16 @@ strio_set_string(VALUE self, VALUE string)
  * call-seq:
  *   close -> nil
  *
- * Closes +self+ for both reading and writing.
+ * Closes +self+ for both reading and writing; returns +nil+:
  *
- * Raises IOError if reading or writing is attempted.
+ *   strio = StringIO.new
+ *   strio.closed? # => false
+ *   strio.close   # => nil
+ *   strio.closed? # => true
+ *   strio.read    # Raises IOError: not opened for reading
+ *   strio.write   # Raises IOError: not opened for writing
  *
- * Related: StringIO#close_read, StringIO#close_write.
+ * Related: StringIO#close_read, StringIO#close_write, StringIO.closed?.
  */
 static VALUE
 strio_close(VALUE self)
@@ -715,7 +720,7 @@ strio_set_lineno(VALUE self, VALUE lineno)
  *   binmode -> self
  *
  * Sets the data mode in +self+ to binary mode;
- * see {Data Mode}[rdoc-ref:File@Data+Mode].
+ * see {Data Mode}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Data+Mode].
  *
  */
 static VALUE
