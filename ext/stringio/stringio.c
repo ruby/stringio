@@ -645,7 +645,6 @@ strio_closed_read(VALUE self)
  *
  * Returns whether +self+ is closed for writing:
  *
- *
  *   strio = StringIO.new
  *   strio.closed_write? # => false
  *   strio.close_write
