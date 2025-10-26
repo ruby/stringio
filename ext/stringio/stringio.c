@@ -1446,7 +1446,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * reads lines using the default record separator global variable `$/`, whose initial value is `"\n"`.
  *
  * ```
- * strio = StringIO.new(Text)
+ * strio = StringIO.new(TEXT)
  * strio.each {|line| p line }
  * strio.eof? # => true
  * ```
@@ -1467,7 +1467,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * reads lines using that string as the record separator:
  *
  * ```
- * strio = StringIO.new(Text)
+ * strio = StringIO.new(TEXT)
  * strio.each(' ') {|line| p line }
  * ```
  *
@@ -1488,7 +1488,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * also limits the size (in characters) of each line to the given limit:
  *
  * ```
- * strio = StringIO.new(Text)
+ * strio = StringIO.new(TEXT)
  * strio.each(10) {|line| p line }
  * ```
  *
@@ -1511,7 +1511,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * honors both:
  *
  * ```
- * strio = StringIO.new(Text)
+ * strio = StringIO.new(TEXT)
  * strio.each(' ', 10) {|line| p line }
  * ```
  *
@@ -1536,7 +1536,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * but in other cases the position may be anywhere (see StringIO#pos):
  *
  * ```
- * strio = StringIO.new(Text)
+ * strio = StringIO.new(TEXT)
  * strio.pos = 30 # Set stream position to character 30.
  * strio.each {|line| p line }
  * ```
@@ -1554,7 +1554,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * see {Special Line Separators}[https://docs.ruby-lang.org/en/master/IO.html#class-IO-label-Special+Line+Separator+Values].
  *
  * ```
- * strio = StringIO.new(Text)
+ * strio = StringIO.new(TEXT)
  * strio.each('') {|line| p line } # Read as paragraphs (separated by blank lines).
  * ```
  *
@@ -1566,7 +1566,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * ```
  *
  * ```
- * strio = StringIO.new(Text)
+ * strio = StringIO.new(TEXT)
  * strio.each(nil) {|line| p line } # "Slurp"; read it all.
  * ```
  *
@@ -2094,7 +2094,7 @@ strio_set_encoding_by_bom(VALUE self)
  * And that these constants have been defined:
  *
  * ```
- * Text = <<EOT
+ * TEXT = <<EOT
  * First line
  * Second line
  *
@@ -2102,8 +2102,8 @@ strio_set_encoding_by_bom(VALUE self)
  * Fifth line
  * EOT
  *
- * Russian = 'тест'
- * Data = "\u9990\u9991\u9992\u9993\u9994"
+ * RUSSIAN = 'тест'
+ * DATA = "\u9990\u9991\u9992\u9993\u9994"
  * ```
  *
  */
