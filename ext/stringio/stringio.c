@@ -593,7 +593,7 @@ strio_close_read(VALUE self)
  * call-seq:
  *   close_write -> nil
  *
- * Closes +self+ for writing; returns +nil+:
+ * Closes +self+ for writing; closed-read setting remains unchanged; returns +nil+:
  *
  *   strio = StringIO.new
  *   strio.closed_write? # => false
