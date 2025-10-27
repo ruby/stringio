@@ -44,7 +44,7 @@ jobs:
       run: bundle exec rake compile
     - name: Build gem
       run: bundle exec rake build
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: gem-${{ matrix.os }}-${{ matrix.ruby }}
         path: pkg/
