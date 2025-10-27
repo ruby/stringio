@@ -602,7 +602,7 @@ strio_close_read(VALUE self)
  *   strio.closed_read?  # => false
  *   strio.write('foo')  # Raises IOError: not opened for writing
  *
- * Related: StringIO#close, StringIO#close_read, StringIO#close_write?.
+ * Related: StringIO#close, StringIO#close_read, StringIO#closed_write?.
  */
 static VALUE
 strio_close_write(VALUE self)
