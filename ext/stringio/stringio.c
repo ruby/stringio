@@ -650,7 +650,7 @@ strio_closed_read(VALUE self)
  *   strio.close_write
  *   strio.closed_write? # => true
  *
- * Related: StringIO#closed?, StringIO#closed_read?.
+ * Related: StringIO#close_write, StringIO#closed?, StringIO#closed_read?.
  */
 static VALUE
 strio_closed_write(VALUE self)
