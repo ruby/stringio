@@ -957,11 +957,11 @@ strio_get_sync(VALUE self)
  * The position in the stream matters:
  *
  *   bytes = []
- *   strio = StringIO.new('hello')
- *   strio.getc # => "h"
- *   strio.pos  # => 1
+ *   strio = StringIO.new('こんにちは')
+ *   strio.getc # => "こ"
+ *   strio.pos  # => 3  # 3-byte character was read.
  *   strio.each_byte {|byte| bytes.push(byte) }
- *   bytes      # => [101, 108, 108, 111]
+ *   bytes      # => [227, 130, 147, 227, 129, 171, 227, 129, 161, 227, 129, 175]
  *
  * If at end-of-file, does not call the block:
  *
