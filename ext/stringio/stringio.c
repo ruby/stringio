@@ -1576,6 +1576,26 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * "First line\nSecond line\n\nFourth line\nFifth line\n"
  * ```
  *
+ * **Keyword Argument `chomp`**
+ *
+ * With keyword argument `chomp` given as `true` (the default is `false`),
+ * removes trailing newline (if any) from each line:
+ *
+ * ```
+ * strio = StringIO.new(TEXT)
+ * strio.each_line(chomp: true) {|line| p line }
+ * ```
+ *
+ * Output:
+ *
+ * ```
+ * "First line"
+ * "Second line"
+ * ""
+ * "Fourth line"
+ * "Fifth line"
+ * ```
+ *
  * With no block given, returns a new  {Enumerator}[https://docs.ruby-lang.org/en/master/Enumerator.html].
  *
  * Related: StringIO.each_byte, StringIO.each_char, StringIO.each_codepoint.
