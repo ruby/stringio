@@ -1067,19 +1067,19 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     public static final ByteList NEWLINE = ByteList.create("\n");
 
-    @JRubyMethod(name = "read")
+    @JRubyMethod(name = "read") // strio.read()
     public IRubyObject read(ThreadContext context) {
         return readCommon(context, 0, null, null);
     }
 
-    @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject arg0) {
-        return readCommon(context, 1, arg0, null);
+    @JRubyMethod(name = "read") // // strio.read([length)
+    public IRubyObject read(ThreadContext context, IRubyObject length) {
+        return readCommon(context, 1, length, null);
     }
 
-    @JRubyMethod(name = "read")
-    public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return readCommon(context, 2, arg0, arg1);
+    @JRubyMethod(name = "read") // strio.read(length, outbuf)
+    public IRubyObject read(ThreadContext context, IRubyObject length, IRubyObject outbuf) {
+        return readCommon(context, 2, length, outbuf);
     }
 
     @SuppressWarnings("fallthrough")
@@ -1102,7 +1102,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     str = arg1;
                     if (!str.isNil()) {
                         str = str.convertToString();
-                        ((RubyString) str).modify();
+                        modifyString((RubyString) str);
                     }
                 case 1:
                     if (!arg0.isNil()) {
@@ -1198,7 +1198,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 str = arg2;
                 if (!str.isNil()) {
                     str = str.convertToString();
-                    ((RubyString) str).modify();
+                    modifyString((RubyString) str);
                 }
             case 2:
                 len = RubyNumeric.fix2int(arg0);
