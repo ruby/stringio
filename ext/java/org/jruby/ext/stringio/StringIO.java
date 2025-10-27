@@ -149,7 +149,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
 
         RubyString string = ptr.string;
-        if (string != null && !string.isNil()) {
+        if (string != null) {
             return string.getEncoding();
         }
 
@@ -2210,12 +2210,13 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     }
 
     private void checkModifiable() {
-        if (getPtr().string == null || getPtr().string.isNil()) {
+        final RubyString string = getPtr().string;
+        if (string == null) {
             /* Null device StringIO */
-        } else if (getPtr().string.isFrozen()) {
+        } else if (string.isFrozen()) {
             throw getRuntime().newIOError("not modifiable string");
         } else {
-            getPtr().string.modify();
+            string.modify();
         }
     }
 
