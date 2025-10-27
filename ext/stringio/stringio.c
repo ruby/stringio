@@ -1431,9 +1431,9 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * :markup: markdown
  *
  * call-seq:
- *   each(sep = $/, chomp: false) {|line| ... }   -> self
- *   each(limit, chomp: false) {|line| ... }      -> self
- *   each(sep, limit, chomp: false) {|line| ... } -> self
+ *   each_line(sep = $/, chomp: false) {|line| ... }   -> self
+ *   each_line(limit, chomp: false) {|line| ... }      -> self
+ *   each_line(sep, limit, chomp: false) {|line| ... } -> self
  *
  * With a block given calls the block with each remaining line (see "Position" below) in the stream;
  * returns `self`.
@@ -1447,7 +1447,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  *
  * ```
  * strio = StringIO.new(TEXT)
- * strio.each {|line| p line }
+ * strio.each_line {|line| p line }
  * strio.eof? # => true
  * ```
  *
@@ -1468,7 +1468,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  *
  * ```
  * strio = StringIO.new(TEXT)
- * strio.each(' ') {|line| p line }
+ * strio.each_line(' ') {|line| p line }
  * ```
  *
  * Output:
@@ -1489,7 +1489,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  *
  * ```
  * strio = StringIO.new(TEXT)
- * strio.each(10) {|line| p line }
+ * strio.each_line(10) {|line| p line }
  * ```
  *
  * Output:
@@ -1512,7 +1512,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  *
  * ```
  * strio = StringIO.new(TEXT)
- * strio.each(' ', 10) {|line| p line }
+ * strio.each_line(' ', 10) {|line| p line }
  * ```
  *
  * Output:
@@ -1538,7 +1538,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  * ```
  * strio = StringIO.new(TEXT)
  * strio.pos = 30 # Set stream position to character 30.
- * strio.each {|line| p line }
+ * strio.each_line {|line| p line }
  * ```
  *
  * Output:
@@ -1555,7 +1555,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  *
  * ```
  * strio = StringIO.new(TEXT)
- * strio.each('') {|line| p line } # Read as paragraphs (separated by blank lines).
+ * strio.each_line('') {|line| p line } # Read as paragraphs (separated by blank lines).
  * ```
  *
  * Output:
@@ -1567,7 +1567,7 @@ strio_readline(int argc, VALUE *argv, VALUE self)
  *
  * ```
  * strio = StringIO.new(TEXT)
- * strio.each(nil) {|line| p line } # "Slurp"; read it all.
+ * strio.each_line(nil) {|line| p line } # "Slurp"; read it all.
  * ```
  *
  * Output:
