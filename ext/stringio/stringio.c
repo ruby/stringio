@@ -1223,7 +1223,7 @@ strio_each_char(VALUE self)
  *
  * With no block given, returns a new {Enumerator}[https://docs.ruby-lang.org/en/master/Enumerator.html].
  *
- * Related: StringIO#each_byte, StringIO.each_char, StringIO.each_line.
+ * Related: StringIO#each_byte, StringIO#each_char, StringIO#each_line.
  */
 static VALUE
 strio_each_codepoint(VALUE self)
