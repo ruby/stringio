@@ -1199,7 +1199,7 @@ strio_readbyte(VALUE self)
  *
  * With no block given, returns a new {Enumerator}[https://docs.ruby-lang.org/en/master/Enumerator.html].
  *
- * Related: StringIO.each_byte, StringIO.each_codepoint, StringIO.each_line.
+ * Related: StringIO#each_byte, StringIO#each_codepoint, StringIO#each_line.
  */
 static VALUE
 strio_each_char(VALUE self)
