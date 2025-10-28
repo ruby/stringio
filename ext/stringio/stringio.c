@@ -971,7 +971,7 @@ strio_get_sync(VALUE self)
  *
  * With no block given, returns a new {Enumerator}[https://docs.ruby-lang.org/en/master/Enumerator.html].
  *
- * Related: StringIO.each_char, StringIO.each_codepoint, StringIO.each_line.
+ * Related: StringIO#each_char, StringIO#each_codepoint, StringIO#each_line.
  */
 static VALUE
 strio_each_byte(VALUE self)
