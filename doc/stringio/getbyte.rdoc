@@ -1,4 +1,4 @@
-Reads and returns the next byte (not characte) from the stream:
+Reads and returns the next integer byte (not character) from the stream:
 
   s = 'foo'
   s.bytes       # => [102, 111, 111]
