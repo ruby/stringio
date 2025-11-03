@@ -1,0 +1,23 @@
+Reads and returns the next character from the stream:
+
+  strio = StringIO.new('foo')
+  strio.getc # => "f"
+  strio.getc # => "o"
+  strio.getc # => "o"
+
+Returns +nil+ if at end-of-stream:
+
+  strio.eof? # => true
+  strio.getc # => nil
+
+Returns characters, not bytes:
+
+  strio = StringIO.new('тест')
+  strio.getc # => "т"
+  strio.getc # => "е"
+
+  strio = StringIO.new('こんにちは')
+  strio.getc # => "こ"
+  strio.getc # => "ん"
+
+Related: StringIO.getbyte.
