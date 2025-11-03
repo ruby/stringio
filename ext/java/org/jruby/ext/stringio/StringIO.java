@@ -1072,7 +1072,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return readCommon(context, 0, null, null);
     }
 
-    @JRubyMethod(name = "read") // // strio.read([length)
+    @JRubyMethod(name = "read") // strio.read(length)
     public IRubyObject read(ThreadContext context, IRubyObject length) {
         return readCommon(context, 1, length, null);
     }
