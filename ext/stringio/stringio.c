@@ -956,7 +956,7 @@ strio_each_byte(VALUE self)
 
 /*
  * call-seq:
- *   getc -> character or nil
+ *   getc -> character, byte, or nil
  *
  * :include: stringio/getc.rdoc
  *
