@@ -98,14 +98,14 @@ strio.write('foo')  # Raises IOError: not opened for writing
 Initial state:
 
 ```ruby
-strio = StringIO.new(TEXT, 'w')
+strio = StringIO.new(TEXT.dup, 'w')
 strio.pos    # => 0   # Beginning of stream.
 strio.string # => ""  # Initially truncated.
 ```
+
 May be written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
 
 ```ruby
-strio = StringIO.new(TEXT, 'w')
 strio.write('foobar')
 strio.string # => "foobar"
 
@@ -168,15 +168,33 @@ strio.gets  # Raises IOError: not opened for reading
 Initial state:
 
 ```ruby
-strio = StringIO.new('foo', 'r+')
-strio.pos    # => 0      # Beginning-of-stream.
-strio.string # => "foo"  # Not truncated.
+strio = StringIO.new('foobar', 'r+')
+strio.pos    # => 0         # Beginning-of-stream.
+strio.string # => "foobar"  # Not truncated.
 ```
 
 May be read or written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
 
 ```ruby
+strio.gets # => "foobar"
 
+strio.rewind
+strio.gets # => "foobar"
+
+strio.pos = 3
+strio.gets # => "bar"
+
+strio.rewind
+strio.write('FOO')
+strio.string # => "FOObar"
+
+strio.pos = 3
+strio.write('BAR')
+strio.string # => "FOOBAR"
+
+strio.pos = 9
+strio.write('baz')
+strio.string # => "FOOBAR\u0000\u0000\u0000baz"
 ```
 
 
