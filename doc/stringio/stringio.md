@@ -50,6 +50,78 @@ DATA = "\u9990\u9991\u9992\u9993\u9994"
 
 ### Read/Write Mode
 
+#### Read/Write Modes
+
+##### `'r'`: Read-Only.
+
+Initial state:
+
+```ruby
+strio = StringIO.new(TEXT, 'r')
+strio.pos # => 0                   # Beginning of stream.
+strio.string.size == 0 # => false  # Not truncated.
+```
+
+May be written anywhere; see #rewind, #pos=, #seek:
+
+```ruby
+strio.gets # => "First line\n"
+strio.gets # => "Second line\n"
+
+strio.rewind
+strio.gets # => "First line\n"
+
+strio.pos = 1
+strio.gets # => "irst line\n"
+
+strio.seek(1, IO::SEEK_CUR)
+strio.gets # => "econd line\n"
+```
+
+May not be written:
+
+```ruby
+strio.write('foo')  # Raises IOError: not opened for writing
+```
+
+##### `'w'`: Write-Only.
+
+Initial state:
+
+```ruby
+strio = StringIO.new(TEXT, 'w')
+strio.pos    # => 0   # Beginning of stream.
+strio.string # => ""  # Initially truncated.
+```
+May be written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+
+```ruby
+strio = StringIO.new(TEXT, 'w')
+strio.write('foobar')
+strio.string # => "foobar"
+
+strio.rewind
+strio.write('FOO')
+strio.string # => "FOObar"
+
+strio.pos = 3
+strio.write('BAR')
+strio.string # => "FOOBAR"
+
+strio.seek(1, IO::SEEK_CUR)
+strio.write('baz')
+strio.string # => "FOOBAR\u0000baz"  # Null-padded.
+
+strio.pos = 20
+strio.write('bat')
+strio.string # => "FOOBAR\u0000baz\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000bat"
+```
+
+May not be read:
+
+```ruby
+strio.read  # Raises IOError: not opened for reading
+```
 ### Data Mode
 
 ### Encodings
