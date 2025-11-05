@@ -9,7 +9,7 @@ With no arguments given,
 reads lines using the default record separator
 (global variable `$/`, whose initial value is `"\n"`).
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.each_line {|line| p line }
 strio.eof? # => true
