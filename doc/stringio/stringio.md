@@ -50,9 +50,7 @@ DATA = "\u9990\u9991\u9992\u9993\u9994"
 
 ### Read/Write Mode
 
-#### Read/Write Modes
-
-##### `'r'`: Read-Only.
+#### `'r'`: Read-Only.
 
 Initial state:
 
@@ -84,7 +82,7 @@ May not be written:
 strio.write('foo')  # Raises IOError: not opened for writing
 ```
 
-##### `'w'`: Write-Only.
+#### `'w'`: Write-Only.
 
 Initial state:
 
@@ -122,6 +120,38 @@ May not be read:
 ```ruby
 strio.read  # Raises IOError: not opened for reading
 ```
+
+#### `'a'`: Append-Only
+
+Initial state:
+
+```ruby
+strio = StringIO.new('foo', 'a')
+strio.pos # => 0         # Beginning-of-stream.
+strio.string # => "foo"  # Not truncated.
+```
+
+May be written only at the end; #rewind, #pos=, #seek do not affect writing:
+
+```ruby
+strio.write('bar')
+strio.string # => "foobar"
+strio.write('baz')
+strio.string # => "foobarbaz"
+
+strio.rewind
+strio.pos = 400
+strio.seek(1, IO::SEEK_CUR)
+strio.write('bat')
+strio.string # => "foobarbazbat"
+```
+
+May not be read:
+
+```ruby
+strio.gets  # Raises IOError: not opened for reading
+```
+
 ### Data Mode
 
 ### Encodings
