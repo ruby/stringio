@@ -50,6 +50,17 @@ DATA = "\u9990\u9991\u9992\u9993\u9994"
 
 ### Read/Write Mode
 
+Summary:
+
+| Mode | Truncate? |   Read   | Read Pos |  Write   | Write Pos |
+|:----:|:---------:|:--------:|:--------:|:--------:|:---------:|
+| 'r'  |    No     | Anywhere |    0     |  Error   |     -     |
+| 'w'  |    Yes    |  Error   |    -     | Anywhere |     0     |
+| 'a'  |    No     |  Error   |    -     | End only |    End    |
+| 'r+' |    No     | Anywhere |    0     | Anywhere |     0     |
+| 'w+' |    Yes    | Anywhere |    0     | Anywhere |     0     |
+| 'a+' |    No     | Anywhere |   End    | End only |    End    |
+
 #### `'r'`: Read-Only.
 
 Initial state:
@@ -151,6 +162,15 @@ May not be read:
 ```ruby
 strio.gets  # Raises IOError: not opened for reading
 ```
+
+#### `'r+'`:
+
+
+#### `'w+'`:
+
+
+#### `'a+'`:
+
 
 ### Data Mode
 
