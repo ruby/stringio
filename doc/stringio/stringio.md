@@ -52,14 +52,14 @@ DATA = "\u9990\u9991\u9992\u9993\u9994"
 
 #### Summary
 
-| Mode | Truncate? |   Read   | Read Pos |  Write   | Write Pos |
-|:----:|:---------:|:--------:|:--------:|:--------:|:---------:|
-| 'r'  |    No     | Anywhere |    0     |  Error   |     -     |
-| 'w'  |    Yes    |  Error   |    -     | Anywhere |     0     |
-| 'a'  |    No     |  Error   |    -     | End only |    End    |
-| 'r+' |    No     | Anywhere |    0     | Anywhere |     0     |
-| 'w+' |    Yes    | Anywhere |    0     | Anywhere |     0     |
-| 'a+' |    No     | Anywhere |   End    | End only |    End    |
+|            Mode            | Truncate? |   Read   | Read Pos |  Write   | Write Pos |
+|:--------------------------:|:---------:|:--------:|:--------:|:--------:|:---------:|
+|  <tt>'r'</tt>: read-only   |    No     | Anywhere |    0     |  Error   |     -     |
+|  <tt>'w'</tt>: write-only  |    Yes    |  Error   |    -     | Anywhere |     0     |
+| <tt>'a'</tt>: append-only  |    No     |  Error   |    -     | End only |    End    |
+| <tt>'r+'</tt>: read/write  |    No     | Anywhere |    0     | Anywhere |     0     |
+| <tt>'w+'</tt>: read-write  |    Yes    | Anywhere |    0     | Anywhere |     0     |
+| <tt>'a+'</tt>: read/append |    No     | Anywhere |   End    | End only |    End    |
 
 #### `'r'`: Read-Only
 
@@ -164,6 +164,20 @@ strio.gets  # Raises IOError: not opened for reading
 ```
 
 #### `'r+'`: Read/Write
+
+Initial state:
+
+```ruby
+strio = StringIO.new('foo', 'r+')
+strio.pos    # => 0      # Beginning-of-stream.
+strio.string # => "foo"  # Not truncated.
+```
+
+May be read or written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+
+```ruby
+
+```
 
 
 #### `'w+'`: Read/Write (Initial Truncate)
