@@ -128,7 +128,6 @@ strio.each_line {|line| p line }
 
 Output:
 
-```ruby
 "んにちは"
 "\x82\x93にちは"
 "\x93にちは"
