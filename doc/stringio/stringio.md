@@ -50,7 +50,7 @@ DATA = "\u9990\u9991\u9992\u9993\u9994"
 
 ### Read/Write Mode
 
-Summary:
+#### Summary
 
 | Mode | Truncate? |   Read   | Read Pos |  Write   | Write Pos |
 |:----:|:---------:|:--------:|:--------:|:--------:|:---------:|
@@ -61,7 +61,7 @@ Summary:
 | 'w+' |    Yes    | Anywhere |    0     | Anywhere |     0     |
 | 'a+' |    No     | Anywhere |   End    | End only |    End    |
 
-#### `'r'`: Read-Only.
+#### `'r'`: Read-Only
 
 Initial state:
 
@@ -93,7 +93,7 @@ May not be written:
 strio.write('foo')  # Raises IOError: not opened for writing
 ```
 
-#### `'w'`: Write-Only.
+#### `'w'`: Write-Only (Initial Truncate)
 
 Initial state:
 
@@ -163,13 +163,13 @@ May not be read:
 strio.gets  # Raises IOError: not opened for reading
 ```
 
-#### `'r+'`:
+#### `'r+'`: Read/Write
 
 
-#### `'w+'`:
+#### `'w+'`: Read/Write (Initial Truncate)
 
 
-#### `'a+'`:
+#### `'a+'`: Read/Append
 
 
 ### Data Mode
