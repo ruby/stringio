@@ -454,7 +454,7 @@ strio_self(VALUE self)
 }
 
 /*
- * Returns 0; for compatibility with IO.
+ * Returns 0.  Just for compatibility to IO.
  */
 static VALUE
 strio_0(VALUE self)
