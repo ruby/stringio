@@ -197,9 +197,33 @@ strio.write('baz')
 strio.string # => "FOOBAR\u0000\u0000\u0000baz"
 ```
 
-
 #### `'w+'`: Read/Write (Initial Truncate)
 
+Initial state:
+
+```ruby
+strio = StringIO.new('foo', 'w+')
+strio.pos # => 0      # Beginning-of-stream.
+strio.string # => ""  # Truncated.
+```
+
+May be read or written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+
+
+```ruby
+strio.write('bar')
+strio.string # => "bar"
+strio.write('foo')
+strio.string # => "barfoo"
+strio.rewind
+strio.write('FOO')
+strio.string # => "FOOfoo"
+strio.write('BAR')
+strio.string # => "FOOBAR"
+strio.pos = 10
+strio.write('baz')
+strio.string # => "FOOBAR\u0000\u0000\u0000\u0000baz"
+```
 
 #### `'a+'`: Read/Append
 
