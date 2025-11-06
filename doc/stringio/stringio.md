@@ -296,7 +296,7 @@ a binary stream may not be changed to text.
 
 ### Reading
 
-You can read immediately from the stream using these instance methods:
+You can read from the stream using these instance methods:
 
 - #getbyte: reads and returns the next byte.
 - #getc: reads and returns the next character.
@@ -319,15 +319,15 @@ This instance method is useful in a multi-threaded application:
 
 You can write to the stream, advancing the position, using these instance methods:
 
-- #putc: write the given character.
-- #write: write the given strings.
+- #putc: writes the given character.
+- #write: writes the given strings.
 
 You can "unshift" to the stream using these instance methods;
 each writes at the current position, without advancing the position,
 so that the written data is next to be read.
 
-- #ungetbyte: unshift the given byte.
-- #ungetc.: unshift the given character.
+- #ungetbyte: unshifts the given byte.
+- #ungetc.: unshifts the given character.
 
 This instance method truncates the stream to the given size:
 
@@ -335,14 +335,32 @@ This instance method truncates the stream to the given size:
 
 ## Line \IO
 
+- #gets: reads and returns the next line.
+- #each_line: reads each remaining line, passing it to the block
+- #readlines: reads the remaining data the stream and returns an array of its lines.
+- [Kernel#puts][kernel#puts]: writes given objects, each followed by newline.
+- [Kernel#readline][kernel#readline]: like #gets, but raises an exception if at end-of-stream.
+
 ## Character \IO
+
+- #each_char: reads each remaining character, passing it to the block.
+- #getc: reads and returns the next character.
+- #putc: writes the given character.
+- #ungetc.: unshifts the given character.
 
 ## Byte \IO
 
+- #each_byte: reads each remaining byte, passing it to the block.
+- #getbyte: reads and returns the next byte.
+- #ungetbyte: unshifts the given byte.
+
 ## Codepoint \IO
 
+- #each_codepoint: reads each remaining codepoint, passing it to the block.
 
-[class io]: https://docs.ruby-lang.org/en/master/IO.html
+[class io]:        https://docs.ruby-lang.org/en/master/IO.html
+[kernel#puts]:     https://docs.ruby-lang.org/en/master/Kernel.html#method-i-puts
+[kernel#readline]: https://docs.ruby-lang.org/en/master/Kernel.html#method-i-readline
 
 [data mode]:           rdoc-ref:StringIO@Data+Mode
 [encodings]:           rdoc-ref:StringIO@Encodings
@@ -351,3 +369,10 @@ This instance method truncates the stream to the given size:
 [open/closed streams]: rdoc-ref:StringIO@Open-2FClosed+Streams
 [position]:            rdoc-ref:StringIO@Position
 [read/write mode]:     rdoc-ref:StringIO@Read-2FWrite+Mode
+
+<!--
+
+TODO:
+- Add File constants (e.g., File::RDONLY) to Data Mode section.
+
+-->
