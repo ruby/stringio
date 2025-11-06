@@ -59,7 +59,7 @@ DATA = "\u9990\u9991\u9992\u9993\u9994"
 | <tt>'a'</tt>: append-only  |    No     |  Error   |    -     | End only |    End    |
 | <tt>'r+'</tt>: read/write  |    No     | Anywhere |    0     | Anywhere |     0     |
 | <tt>'w+'</tt>: read-write  |    Yes    | Anywhere |    0     | Anywhere |     0     |
-| <tt>'a+'</tt>: read/append |    No     | Anywhere |   End    | End only |    End    |
+| <tt>'a+'</tt>: read/append |    No     | Anywhere |    0     | End only |    End    |
 
 #### `'r'`: Read-Only
 
@@ -98,7 +98,7 @@ strio.write('foo')  # Raises IOError: not opened for writing
 Initial state:
 
 ```ruby
-strio = StringIO.new(TEXT.dup, 'w')
+strio = StringIO.new('foo', 'w')
 strio.pos    # => 0   # Beginning of stream.
 strio.string # => ""  # Initially truncated.
 ```
@@ -213,13 +213,17 @@ May be read or written anywhere (even past end-of-stream); see #rewind, #pos=, #
 ```ruby
 strio.write('bar')
 strio.string # => "bar"
+
 strio.write('foo')
 strio.string # => "barfoo"
+
 strio.rewind
 strio.write('FOO')
 strio.string # => "FOOfoo"
+
 strio.write('BAR')
 strio.string # => "FOOBAR"
+
 strio.pos = 10
 strio.write('baz')
 strio.string # => "FOOBAR\u0000\u0000\u0000\u0000baz"
@@ -227,6 +231,28 @@ strio.string # => "FOOBAR\u0000\u0000\u0000\u0000baz"
 
 #### `'a+'`: Read/Append
 
+Initial state:
+
+```ruby
+strio = StringIO.new('foo', 'a+')
+strio.pos# => 0          # Beginning-of-stream.
+strio.string # => "foo"  # Not truncated.
+```
+
+May be written only at the end; #rewind, #pos=, #seek do not affect writing:
+
+```ruby
+strio.write('bar')
+strio.string # => "foobar"
+strio.write('baz')
+strio.string # => "foobarbaz"
+
+strio.rewind
+strio.pos = 400
+strio.seek(1, IO::SEEK_CUR)
+strio.write('bat')
+strio.string # => "foobarbazbat"
+```
 
 ### Data Mode
 
