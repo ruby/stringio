@@ -347,8 +347,8 @@ This instance method is useful in a multi-threaded application:
 You can write to the stream, advancing the position, using these instance methods:
 
 - #putc(character): writes a given character.
-- #write(*objects): writes the given objects as strings.
-- [Kernel#puts][kernel#puts](*objects): writes given objects as strings, each followed by newline.
+- #write: writes the given objects as strings.
+- [Kernel#puts][kernel#puts] writes given objects as strings, each followed by newline.
 
 You can "unshift" to the stream using these instance methods;
 each writes at the current position, without advancing the position,
@@ -363,26 +363,43 @@ One more writing method:
 
 ## Line \IO
 
+Reading:
+
 - #gets: reads and returns the next line.
 - #each_line: reads each remaining line, passing it to the block
 - #readlines: reads the remaining data the stream and returns an array of its lines.
-- [Kernel#puts][kernel#puts]: writes given objects, each followed by newline.
 - [Kernel#readline][kernel#readline]: like #gets, but raises an exception if at end-of-stream.
+
+Writing:
+
+- [Kernel#puts][kernel#puts]: writes given objects, each followed by newline.
 
 ## Character \IO
 
+Reading:
+
 - #each_char: reads each remaining character, passing it to the block.
 - #getc: reads and returns the next character.
+
+Writing:
+
 - #putc: writes the given character.
 - #ungetc.: unshifts the given character.
 
 ## Byte \IO
 
+Reading:
+
 - #each_byte: reads each remaining byte, passing it to the block.
 - #getbyte: reads and returns the next byte.
+
+Writing:
+
 - #ungetbyte: unshifts the given byte.
 
 ## Codepoint \IO
+
+Reading:
 
 - #each_codepoint: reads each remaining codepoint, passing it to the block.
 
