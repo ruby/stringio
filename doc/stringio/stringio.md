@@ -173,28 +173,29 @@ strio.pos    # => 0         # Beginning-of-stream.
 strio.string # => "foobar"  # Not truncated.
 ```
 
-May be read or written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+May be written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
 
 ```ruby
-strio.gets # => "foobar"
-
-strio.rewind
-strio.gets # => "foobar"
-
-strio.pos = 3
-strio.gets # => "bar"
-
-strio.rewind
 strio.write('FOO')
 strio.string # => "FOObar"
-
-strio.pos = 3
 strio.write('BAR')
 strio.string # => "FOOBAR"
+strio.write('BAZ')
+strio.string # => "FOOBARBAZ"
+strio.pos = 12
+strio.write('BAT')
+strio.string # => "FOOBARBAZ\u0000\u0000\u0000BAT"  # Null padded.
+```
 
-strio.pos = 9
-strio.write('baz')
-strio.string # => "FOOBAR\u0000\u0000\u0000baz"
+May be read anywhere:
+
+```ruby
+strio.pos = 0
+strio.gets(3) # => "FOO"
+strio.pos = 6
+strio.gets(3) # => "BAZ"
+strio.pos = 400
+strio.gets(3) # => nil
 ```
 
 #### `'w+'`: Read/Write (Initial Truncate)
