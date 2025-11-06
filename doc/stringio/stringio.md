@@ -284,13 +284,39 @@ a binary stream may not be changed to text.
 
 ### Encodings
 
+[TODO]
+
 ### Position
+
+[TODO]
 
 ### Line Number
 
+[TODO]
+
 ### Open/Closed Streams
 
+A new stream is open for either reading or writing, and may be open for both;
+see [Read/Write Mode][read/write mode].
+
+Each of these methods initializes the read/write mode for a new or re-initialized stream:
+
+- ::new(string = '', mode = 'r+'): returns a new stream.
+- ::open(string = '', mode = 'r+'): passes a new stream to the block.
+- #reopen(string = '', mode = 'r+'): re-initializes the stream.
+
+Other relevant methods:
+
+- #close: closes the stream for both reading and writing.
+- #close_read: closes the stream for reading.
+- #close_write: closes the stream for writing.
+- #closed?: returns whether the stream is closed for both reading and writing.
+- #closed_read?: returns whether the stream is closed for reading.
+- #closed_write?: returns whether the stream is closed for writing.
+
 ### End-of-Stream
+
+[TODO]
 
 ## Basic Stream \IO
 
