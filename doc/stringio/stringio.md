@@ -193,7 +193,6 @@ strio.string # => ""  # Truncated.
 
 May be written anywhere (even past end-of-stream):
 
-
 ```ruby
 strio.write('foobar')
 strio.string # => "foobar"
@@ -257,7 +256,7 @@ strio.gets(3) # => nil
 ### Data Mode
 
 To specify whether the stream is to be treated as text or as binary data,
-either of the following may be suffixed to any of the read/write modes above:
+either of the following may be suffixed to any of the string read/write modes above:
 
 - `'t'`: Text;
   sets the default external encoding to Encoding::UTF_8.
