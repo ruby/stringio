@@ -303,6 +303,7 @@ You can read from the stream using these instance methods:
 - #gets: reads and returns the next line.
 - #read: reads and returns the remaining data in the stream.
 - #readlines: reads the remaining data the stream and returns an array of its lines.
+- [Kernel#readline][kernel#readline]: like #gets, but raises an exception if at end-of-stream.
 
 You can iterate over the stream using these instance methods:
 
@@ -321,6 +322,7 @@ You can write to the stream, advancing the position, using these instance method
 
 - #putc: writes the given character.
 - #write: writes the given strings.
+- [Kernel#puts][kernel#puts]: writes given objects, each followed by newline.
 
 You can "unshift" to the stream using these instance methods;
 each writes at the current position, without advancing the position,
