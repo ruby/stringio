@@ -256,6 +256,33 @@ strio.gets(3) # => nil
 ```
 ### Data Mode
 
+To specify whether the stream is to be treated as text or as binary data,
+either of the following may be suffixed to any of the read/write modes above:
+
+- `'t'`: Text;
+  sets the default external encoding to Encoding::UTF_8.
+- `'b'`: Binary;
+  sets the default external encoding to Encoding::ASCII_8BIT.
+
+If neither is given, the stream defaults to text data.
+
+Examples:
+
+```ruby
+strio = StringIO.new(TEXT, 'rt')
+strio.external_encoding # => #<Encoding:UTF-8>
+strio = StringIO.new(DATA, 'rb')
+strio.external_encoding # => #<Encoding:BINARY (ASCII-8BIT)>```
+
+When the data mode is specified, the read/write mode may not be omitted:
+
+```ruby
+StringIO.new('DATA', 'b')  # Raises ArgumentError: invalid access mode b
+```
+
+A text stream may be changed to binary by calling instance method #binmode;
+a binary stream may not be changed to text.
+
 ### Encodings
 
 ### Position
