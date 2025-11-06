@@ -66,25 +66,18 @@ DATA = "\u9990\u9991\u9992\u9993\u9994"
 Initial state:
 
 ```ruby
-strio = StringIO.new(TEXT, 'r')
-strio.pos # => 0                   # Beginning of stream.
-strio.string.size == 0 # => false  # Not truncated.
+strio = StringIO.new('foobarbaz', 'r')
+strio.pos    # => 0            # Beginning-of-stream.
+strio.string # => "foobarbaz"  # Not truncated.
 ```
 
-May be written anywhere; see #rewind, #pos=, #seek:
+May be read anywhere:
 
 ```ruby
-strio.gets # => "First line\n"
-strio.gets # => "Second line\n"
-
-strio.rewind
-strio.gets # => "First line\n"
-
-strio.pos = 1
-strio.gets # => "irst line\n"
-
-strio.seek(1, IO::SEEK_CUR)
-strio.gets # => "econd line\n"
+strio.gets(3) # => "foo"
+strio.gets(3) # => "bar"
+strio.pos = 9
+strio.gets(3) # => nil
 ```
 
 May not be written:
@@ -93,7 +86,7 @@ May not be written:
 strio.write('foo')  # Raises IOError: not opened for writing
 ```
 
-#### `'w'`: Write-Only (Initial Truncate)
+#### `'w'`: Write-Only
 
 Initial state:
 
@@ -103,27 +96,20 @@ strio.pos    # => 0   # Beginning of stream.
 strio.string # => ""  # Initially truncated.
 ```
 
-May be written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+May be written anywhere (even past end-of-stream):
 
 ```ruby
 strio.write('foobar')
 strio.string # => "foobar"
-
 strio.rewind
 strio.write('FOO')
 strio.string # => "FOObar"
-
 strio.pos = 3
 strio.write('BAR')
 strio.string # => "FOOBAR"
-
-strio.seek(1, IO::SEEK_CUR)
+strio.pos = 9
 strio.write('baz')
-strio.string # => "FOOBAR\u0000baz"  # Null-padded.
-
-strio.pos = 20
-strio.write('bat')
-strio.string # => "FOOBAR\u0000baz\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000bat"
+strio.string # => "FOOBAR\u0000\u0000\u0000baz"  # Null-padded.
 ```
 
 May not be read:
@@ -138,21 +124,18 @@ Initial state:
 
 ```ruby
 strio = StringIO.new('foo', 'a')
-strio.pos # => 0         # Beginning-of-stream.
+strio.pos    # => 0      # Beginning-of-stream.
 strio.string # => "foo"  # Not truncated.
 ```
 
-May be written only at the end; #rewind, #pos=, #seek do not affect writing:
+May be written only at the end; position does not affect writing:
 
 ```ruby
 strio.write('bar')
 strio.string # => "foobar"
 strio.write('baz')
 strio.string # => "foobarbaz"
-
-strio.rewind
 strio.pos = 400
-strio.seek(1, IO::SEEK_CUR)
 strio.write('bat')
 strio.string # => "foobarbazbat"
 ```
@@ -173,7 +156,7 @@ strio.pos    # => 0         # Beginning-of-stream.
 strio.string # => "foobar"  # Not truncated.
 ```
 
-May be written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+May be written anywhere (even past end-of-stream):
 
 ```ruby
 strio.write('FOO')
@@ -208,7 +191,7 @@ strio.pos    # => 0   # Beginning-of-stream.
 strio.string # => ""  # Truncated.
 ```
 
-May be written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+May be written anywhere (even past end-of-stream):
 
 
 ```ruby
@@ -244,20 +227,18 @@ Initial state:
 
 ```ruby
 strio = StringIO.new('foo', 'a+')
-strio.pos# => 0          # Beginning-of-stream.
+strio.pos    # => 0      # Beginning-of-stream.
 strio.string # => "foo"  # Not truncated.
 ```
 
-May be written only at the end; #rewind, #pos=, #seek do not affect writing:
+May be written only at the end; #rewind; position does not affect writing:
 
 ```ruby
 strio.write('bar')
 strio.string # => "foobar"
 strio.write('baz')
 strio.string # => "foobarbaz"
-strio.rewind
 strio.pos = 400
-strio.seek(1, IO::SEEK_CUR)
 strio.write('bat')
 strio.string # => "foobarbazbat"
 ```
