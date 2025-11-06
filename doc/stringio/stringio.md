@@ -326,8 +326,8 @@ You can read from the stream using these instance methods:
 
 - #getbyte: reads and returns the next byte.
 - #getc: reads and returns the next character.
-- #gets: reads and returns the next line.
-- #read: reads and returns the remaining data in the stream.
+- #gets: reads and returns all or part of the next line.
+- #read: reads and returns all or part of the remaining data in the stream.
 - #readlines: reads the remaining data the stream and returns an array of its lines.
 - [Kernel#readline][kernel#readline]: like #gets, but raises an exception if at end-of-stream.
 
@@ -336,30 +336,30 @@ You can iterate over the stream using these instance methods:
 - #each_byte: reads each remaining byte, passing it to the block.
 - #each_char: reads each remaining character, passing it to the block.
 - #each_codepoint: reads each remaining codepoint, passing it to the block.
-- #each_line: reads each remaining line, passing it to the block
+- #each_line: reads all or part of each remaining line, passing the read string to the block
 
 This instance method is useful in a multi-threaded application:
 
-- #pread.
-
+- #pread: reads and returns all or part of the stream.
+ 
 ### Writing
 
 You can write to the stream, advancing the position, using these instance methods:
 
-- #putc: writes the given character.
-- #write: writes the given strings.
-- [Kernel#puts][kernel#puts]: writes given objects, each followed by newline.
+- #putc(character): writes a given character.
+- #write(*objects): writes the given objects as strings.
+- [Kernel#puts][kernel#puts](*objects): writes given objects as strings, each followed by newline.
 
 You can "unshift" to the stream using these instance methods;
 each writes at the current position, without advancing the position,
 so that the written data is next to be read.
 
-- #ungetbyte: unshifts the given byte.
-- #ungetc.: unshifts the given character.
+- #ungetbyte(byte): unshifts the given byte.
+- #ungetc(character): unshifts the given character.
 
-This instance method truncates the stream to the given size:
+One more writing method:
 
-- #truncate.
+- #truncate(size): truncates the stream's string to the given size.
 
 ## Line \IO
 
