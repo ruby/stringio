@@ -204,30 +204,38 @@ Initial state:
 
 ```ruby
 strio = StringIO.new('foo', 'w+')
-strio.pos # => 0      # Beginning-of-stream.
+strio.pos    # => 0   # Beginning-of-stream.
 strio.string # => ""  # Truncated.
 ```
 
-May be read or written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
+May be written anywhere (even past end-of-stream); see #rewind, #pos=, #seek:
 
 
 ```ruby
-strio.write('bar')
-strio.string # => "bar"
-
-strio.write('foo')
-strio.string # => "barfoo"
-
+strio.write('foobar')
+strio.string # => "foobar"
 strio.rewind
 strio.write('FOO')
-strio.string # => "FOOfoo"
-
+strio.string # => "FOObar"
 strio.write('BAR')
 strio.string # => "FOOBAR"
+strio.write('BAZ')
+strio.string # => "FOOBARBAZ"
+strio.pos = 12
+strio.write('BAT')
+strio.string # => "FOOBARBAZ\u0000\u0000\u0000BAT"  # Null-padded.
+```
 
-strio.pos = 10
-strio.write('baz')
-strio.string # => "FOOBAR\u0000\u0000\u0000\u0000baz"
+May be read anywhere:
+
+```ruby
+strio.rewind
+strio.gets(3) # => "FOO"
+strio.gets(3) # => "BAR"
+strio.pos = 12
+strio.gets(3) # => "BAT"
+strio.pos = 400
+strio.gets(3) # => nil
 ```
 
 #### `'a+'`: Read/Append
@@ -247,7 +255,6 @@ strio.write('bar')
 strio.string # => "foobar"
 strio.write('baz')
 strio.string # => "foobarbaz"
-
 strio.rewind
 strio.pos = 400
 strio.seek(1, IO::SEEK_CUR)
@@ -255,6 +262,17 @@ strio.write('bat')
 strio.string # => "foobarbazbat"
 ```
 
+May be read anywhere:
+
+```ruby
+strio.rewind
+strio.gets(3) # => "foo"
+strio.gets(3) # => "bar"
+strio.pos = 9
+strio.gets(3) # => "bat"
+strio.pos = 400
+strio.gets(3) # => nil
+```
 ### Data Mode
 
 ### Encodings
