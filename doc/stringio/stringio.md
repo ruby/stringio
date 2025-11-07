@@ -288,7 +288,7 @@ a binary stream may not be changed to text.
 
 ### Position
 
-A stream has a _position_, and integer offset (in characters, not bytes) into the stream.
+A stream has a _position_, and integer offset (in bytes) into the stream.
 The initial position of a stream is zero.
 
 A couple of methods:
