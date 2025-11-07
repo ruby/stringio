@@ -288,7 +288,107 @@ a binary stream may not be changed to text.
 
 ### Position
 
-[TODO]
+A stream has a _position_, and integer offset (in characters, not bytes) into the stream.
+The initial position of a stream is zero.
+
+A couple of methods:
+
+- #pos: returns the position.
+- #pos=: sets the position.
+
+Except for #pread, a read method (see [Basic Reading][basic reading])
+begins reading at the current position.
+
+Except for #pread, a read method advances the position past the read substring.
+
+Examples:
+
+```ruby
+strio = StringIO.new(TEXT)
+strio.string # => "First line\nSecond line\n\nFourth line\nFifth line\n"
+strio.pos    # => 0
+strio.getc   # => "F"
+strio.pos    # => 1
+strio.gets   # => "irst line\n"
+strio.pos    # => 11
+strio.pos = 24
+strio.gets   # => "Fourth line\n"
+strio.pos    # => 36
+```
+
+These write methods advance the position to the end of the written substring:
+
+- #putc(character): writes a given character.
+- #write: writes the given objects as strings.
+- [Kernel#puts][kernel#puts] writes given objects as strings, each followed by newline.
+
+Examples:
+
+```ruby
+strio = StringIO.new('foo')
+strio.pos    # => 0
+strio.putc('b')
+strio.string # => "boo"
+strio.pos    # => 1
+strio.write('r')
+strio.string # => "bro"
+strio.pos    # => 2
+strio.puts('ew')
+strio.string # => "brew\n"
+strio.pos    # => 5
+strio.pos = 8
+strio.write('foo')
+strio.string # => "brew\n\u0000\u0000\u0000foo"
+strio.pos    # => 11
+```
+
+An iterator method sets the position to end-of-stream:
+
+```ruby
+strio.pos = 0
+strio.each_char {|char| nil }
+strio.pos    # => 11
+```
+
+Each of these methods writes _before_ the current position, and decrements the position
+so that the written data is next to be read:
+
+- #ungetbyte(byte): unshifts the given byte.
+- #ungetc(character): unshifts the given character.
+
+Examples:
+
+```ruby
+strio = StringIO.new('foo')
+strio.pos = 2
+strio.ungetc('x')
+strio.pos    # => 1
+strio.string # => "fxo"
+strio.ungetc('x')
+strio.pos    # => 0
+strio.string # => "xxo"
+```
+
+Each of these method sets the position to zero:
+
+- #rewind: sets the position to zero.
+- #truncate(size): truncates the stream's string to the given size.
+
+Examples:
+
+```ruby
+strio = StringIO.new('foobar')
+strio.truncate(3)
+strio.pos    # => 0
+strio.string # => "foo"
+strio.truncate(0)
+strio.pos    # => 0
+strio.string # => ""
+```
+
+This method sets the position:
+
+- #seek: sets the position.
 
 ### Line Number
 
@@ -320,7 +420,7 @@ Other relevant methods:
 
 ## Basic Stream \IO
 
-### Reading
+### Basic Reading
 
 You can read from the stream using these instance methods:
 
@@ -342,7 +442,7 @@ This instance method is useful in a multi-threaded application:
 
 - #pread: reads and returns all or part of the stream.
  
-### Writing
+### Basic Writing
 
 You can write to the stream, advancing the position, using these instance methods:
 
@@ -351,7 +451,7 @@ You can write to the stream, advancing the position, using these instance method
 - [Kernel#puts][kernel#puts] writes given objects as strings, each followed by newline.
 
 You can "unshift" to the stream using these instance methods;
-each writes at the current position, without advancing the position,
+each  writes _before_ the current position, and decrements the position
 so that the written data is next to be read.
 
 - #ungetbyte(byte): unshifts the given byte.
@@ -407,6 +507,8 @@ Reading:
 [kernel#puts]:     https://docs.ruby-lang.org/en/master/Kernel.html#method-i-puts
 [kernel#readline]: https://docs.ruby-lang.org/en/master/Kernel.html#method-i-readline
 
+[basic reading]:       rdoc-ref:StringIO@Basic+Reading
+[basic writing]:       rdoc-ref:StringIO@Basic+Writing
 [data mode]:           rdoc-ref:StringIO@Data+Mode
 [encodings]:           rdoc-ref:StringIO@Encodings
 [end-of-stream]:       rdoc-ref:StringIO@End-of-Stream
