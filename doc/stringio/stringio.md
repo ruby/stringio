@@ -282,7 +282,12 @@ a binary stream may not be changed to text.
 
 ### Encodings
 
-[TODO]
+- #external_encoding: returns the current encoding of the stream.
+- #internal_encoding: returns +nil+.
+- #set_encoding: sets the encoding for the stream.
+- #set_encoding_by_bom: sets the encoding for the stream to the stream's BOM (byte order mark).
+
+- data mode
 
 ### Position
 
@@ -290,6 +295,12 @@ A stream has a _position_, and integer offset (in bytes) into the stream.
 The initial position of a stream is zero.
 
 #### Getting and Setting the Position
+
+Each of these methods initializes (to zero) the position of a new or re-initialized stream:
+
+- ::new(string = '', mode = 'r+'): returns a new stream.
+- ::open(string = '', mode = 'r+'): passes a new stream to the block.
+- #reopen(string = '', mode = 'r+'): re-initializes the stream.
 
 Each of these methods gets or sets the position, without otherwise changing the stream:
 
@@ -546,5 +557,6 @@ Reading:
 
 TODO:
 - Add File constants (e.g., File::RDONLY) to Data Mode section.
+- Review the summary table, as regards position.
 
 -->
