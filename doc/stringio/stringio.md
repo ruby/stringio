@@ -289,10 +289,29 @@ a binary stream may not be changed to text.
 A stream has a _position_, and integer offset (in bytes) into the stream.
 The initial position of a stream is zero.
 
-A couple of methods:
+#### Getting and Setting the Position
+
+Each of these methods gets or sets the position, without otherwise changing the stream:
 
 - #pos: returns the position.
 - #pos=: sets the position.
+- #rewind: sets the position to zero.
+- #seek: sets the position.
+
+Examples:
+
+```ruby
+strio = StringIO.new('foobar')
+strio.pos # => 0
+strio.pos = 3
+strio.pos # => 3
+strio.rewind
+strio.pos # => 0
+strio.seek(0, IO::SEEK_END)
+strio.pos # => 6
+```
+
+#### Position Before and After Reading
 
 Except for #pread, a stream reading method (see [Basic Reading][basic reading])
 begins reading at the current position.
@@ -320,9 +339,19 @@ strio.pos = 1 # At second byte of first character.
 strio.read    # => "\x82ест"
 strio.pos = 2 # At first of second character.
 strio.read    # => "ест"
+
+strio = StringIO.new(TEXT)
+strio.pos = 15
+a = []
+strio.each_line {|line| a.push(line) }
+a         # => ["nd line\n", "\n", "Fourth line\n", "Fifth line\n"]
+strio.pos # => 47  ## End-of-stream.
 ```
 
-These write methods advance the position to the end of the written substring:
+#### Position Before and After Writing
+
+Each of these methods begins writing at the current position,
+and advances the position to the end of the written substring:
 
 - #putc(character): writes a given character.
 - #write: writes the given objects as strings.
@@ -348,14 +377,6 @@ strio.string # => "brew\n\u0000\u0000\u0000foo"
 strio.pos    # => 11
 ```
 
-An iterator method sets the position to end-of-stream:
-
-```ruby
-strio.pos = 0
-strio.each_char {|char| nil }
-strio.pos    # => 11
-```
-
 Each of these methods writes _before_ the current position, and decrements the position
 so that the written data is next to be read:
 
@@ -375,26 +396,24 @@ strio.pos    # => 0
 strio.string # => "xxo"
 ```
 
-Each of these method sets the position to zero:
 
-- #rewind: sets the position to zero.
+This method does not affect the position:
+
 - #truncate(size): truncates the stream's string to the given size.
 
 Examples:
 
 ```ruby
 strio = StringIO.new('foobar')
+strio.pos    # => 0
 strio.truncate(3)
-strio.pos    # => 0
 strio.string # => "foo"
-strio.truncate(0)
 strio.pos    # => 0
+strio.pos = 500
+strio.truncate(0)
 strio.string # => ""
+strio.pos    # => 500
 ```
-
-This method sets the position:
-
-- #seek: sets the position.
 
 ### Line Number
 
