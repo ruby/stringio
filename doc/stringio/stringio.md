@@ -31,7 +31,7 @@ Examples on this page assume that \StringIO has been required:
 require 'stringio'
 ```
 
-And that these constants have been defined:
+And that this constant has been defined:
 
 ```
 TEXT = <<EOT
@@ -41,9 +41,6 @@ Second line
 Fourth line
 Fifth line
 EOT
-
-RUSSIAN = 'тест'
-DATA = "\u9990\u9991\u9992\u9993\u9994"
 ```
 
 ## Stream Properties
@@ -268,15 +265,16 @@ If neither is given, the stream defaults to text data.
 Examples:
 
 ```ruby
-strio = StringIO.new(TEXT, 'rt')
+strio = StringIO.new('foo', 'rt')
 strio.external_encoding # => #<Encoding:UTF-8>
-strio = StringIO.new(DATA, 'rb')
+data = "\u9990\u9991\u9992\u9993\u9994"
+strio = StringIO.new(data, 'rb')
 strio.external_encoding # => #<Encoding:BINARY (ASCII-8BIT)>```
 
 When the data mode is specified, the read/write mode may not be omitted:
 
 ```ruby
-StringIO.new('DATA', 'b')  # Raises ArgumentError: invalid access mode b
+StringIO.new(data, 'b')  # Raises ArgumentError: invalid access mode b
 ```
 
 A text stream may be changed to binary by calling instance method #binmode;
@@ -296,7 +294,7 @@ A couple of methods:
 - #pos: returns the position.
 - #pos=: sets the position.
 
-Except for #pread, a read method (see [Basic Reading][basic reading])
+Except for #pread, a stream reading method (see [Basic Reading][basic reading])
 begins reading at the current position.
 
 Except for #pread, a read method advances the position past the read substring.
@@ -314,6 +312,14 @@ strio.pos    # => 11
 strio.pos = 24
 strio.gets   # => "Fourth line\n"
 strio.pos    # => 36
+
+strio = StringIO.new('тест') # Four 2-byte characters.
+strio.pos = 0 # At first byte of first character.
+strio.read    # => "тест"
+strio.pos = 1 # At second byte of first character.
+strio.read    # => "\x82ест"
+strio.pos = 2 # At first of second character.
+strio.read    # => "ест"
 ```
 
 These write methods advance the position to the end of the written substring:
