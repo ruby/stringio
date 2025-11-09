@@ -323,8 +323,9 @@ Each of these methods initializes (to zero) the position of a new or re-opened s
 - ::open(string = '', mode = 'r+'): passes a new stream to the block.
 - #reopen(string = '', mode = 'r+'): re-initializes the stream.
 
-Each of these methods gets or sets the position, without otherwise changing the stream:
+Each of these methods queries, gets, or sets the position, without otherwise changing the stream:
 
+- #eof?: returns whether the position is at end-of-stream.
 - #pos: returns the position.
 - #pos=: sets the position.
 - #rewind: sets the position to zero.
@@ -334,13 +335,15 @@ Examples:
 
 ```ruby
 strio = StringIO.new('foobar')
-strio.pos # => 0
+strio.pos  # => 0
 strio.pos = 3
-strio.pos # => 3
+strio.pos  # => 3
+strio.eof? # => false
 strio.rewind
-strio.pos # => 0
+strio.pos  # => 0
 strio.seek(0, IO::SEEK_END)
-strio.pos # => 6
+strio.pos  # => 6
+strio.eof? # => true
 ```
 
 #### Position Before and After Reading
@@ -513,10 +516,6 @@ Other relevant methods:
 - #closed?: returns whether the stream is closed for both reading and writing.
 - #closed_read?: returns whether the stream is closed for reading.
 - #closed_write?: returns whether the stream is closed for writing.
-
-### End-of-Stream
-
-[TODO]
 
 ## Basic Stream \IO
 
