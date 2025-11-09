@@ -18,8 +18,8 @@ Like an \IO stream, a \StringIO stream has certain properties:
   see [Position][position].
 - **Line number**: a special, line-oriented, "position" (different from the position mentioned above);
   see [Line Number][line number].
-- **Open/closed**: whether the stream is open or closed, for reading or writing.
-  see [Open/Closed Streams][open/closed streams].
+  - **Open/closed**: whether the stream is open or closed, for reading or writing.
+    see [Open/Closed Streams][open/closed streams].
 - **End-of-stream**: whether the position is at the end of the stream;
   see [End-of-Stream][end-of-stream].
 
@@ -49,14 +49,14 @@ EOT
 
 #### Summary
 
-|            Mode            | Truncate? |   Read   | Read Pos |  Write   | Write Pos |
-|:--------------------------:|:---------:|:--------:|:--------:|:--------:|:---------:|
-|  <tt>'r'</tt>: read-only   |    No     | Anywhere |    0     |  Error   |     -     |
-|  <tt>'w'</tt>: write-only  |    Yes    |  Error   |    -     | Anywhere |     0     |
-| <tt>'a'</tt>: append-only  |    No     |  Error   |    -     | End only |    End    |
-| <tt>'r+'</tt>: read/write  |    No     | Anywhere |    0     | Anywhere |     0     |
-| <tt>'w+'</tt>: read-write  |    Yes    | Anywhere |    0     | Anywhere |     0     |
-| <tt>'a+'</tt>: read/append |    No     | Anywhere |    0     | End only |    End    |
+|            Mode            | Truncate? |   Read   |  Write   |
+|:--------------------------:|:---------:|:--------:|:--------:|
+|  <tt>'r'</tt>: read-only   |    No     | Anywhere |  Error   |
+|  <tt>'w'</tt>: write-only  |    Yes    |  Error   | Anywhere |
+| <tt>'a'</tt>: append-only  |    No     |  Error   | End only |
+| <tt>'r+'</tt>: read/write  |    No     | Anywhere | Anywhere |
+| <tt>'w+'</tt>: read-write  |    Yes    | Anywhere | Anywhere |
+| <tt>'a+'</tt>: read/append |    No     | Anywhere | End only |
 
 #### `'r'`: Read-Only
 
@@ -621,6 +621,5 @@ Reading:
 
 TODO:
 - Add File constants (e.g., File::RDONLY) to Data Mode section.
-- Review the summary table, as regards position.
 
 -->
