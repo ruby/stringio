@@ -49,14 +49,14 @@ EOT
 
 #### Summary
 
-|            Mode            | Truncate? |   Read   |  Write   |
-|:--------------------------:|:---------:|:--------:|:--------:|
-|  <tt>'r'</tt>: read-only   |    No     | Anywhere |  Error   |
-|  <tt>'w'</tt>: write-only  |    Yes    |  Error   | Anywhere |
-| <tt>'a'</tt>: append-only  |    No     |  Error   | End only |
-| <tt>'r+'</tt>: read/write  |    No     | Anywhere | Anywhere |
-| <tt>'w+'</tt>: read-write  |    Yes    | Anywhere | Anywhere |
-| <tt>'a+'</tt>: read/append |    No     | Anywhere | End only |
+|            Mode            | Initial Clear? |   Read   |  Write   |
+|:--------------------------:|:--------------:|:--------:|:--------:|
+|  <tt>'r'</tt>: read-only   |       No       | Anywhere |  Error   |
+|  <tt>'w'</tt>: write-only  |      Yes       |  Error   | Anywhere |
+| <tt>'a'</tt>: append-only  |       No       |  Error   | End only |
+| <tt>'r+'</tt>: read/write  |       No       | Anywhere | Anywhere |
+| <tt>'w+'</tt>: read-write  |      Yes       | Anywhere | Anywhere |
+| <tt>'a+'</tt>: read/append |       No       | Anywhere | End only |
 
 #### `'r'`: Read-Only
 
@@ -65,7 +65,7 @@ Initial state:
 ```ruby
 strio = StringIO.new('foobarbaz', 'r')
 strio.pos    # => 0            # Beginning-of-stream.
-strio.string # => "foobarbaz"  # Not truncated.
+strio.string # => "foobarbaz"  # Not cleared.
 ```
 
 May be read anywhere:
@@ -90,7 +90,7 @@ Initial state:
 ```ruby
 strio = StringIO.new('foo', 'w')
 strio.pos    # => 0   # Beginning of stream.
-strio.string # => ""  # Initially truncated.
+strio.string # => ""  # Initially cleared.
 ```
 
 May be written anywhere (even past end-of-stream):
@@ -122,7 +122,7 @@ Initial state:
 ```ruby
 strio = StringIO.new('foo', 'a')
 strio.pos    # => 0      # Beginning-of-stream.
-strio.string # => "foo"  # Not truncated.
+strio.string # => "foo"  # Not cleared.
 ```
 
 May be written only at the end; position does not affect writing:
@@ -150,7 +150,7 @@ Initial state:
 ```ruby
 strio = StringIO.new('foobar', 'r+')
 strio.pos    # => 0         # Beginning-of-stream.
-strio.string # => "foobar"  # Not truncated.
+strio.string # => "foobar"  # Not cleared.
 ```
 
 May be written anywhere (even past end-of-stream):
@@ -178,7 +178,7 @@ strio.pos = 400
 strio.gets(3) # => nil
 ```
 
-#### `'w+'`: Read/Write (Initial Truncate)
+#### `'w+'`: Read/Write (Initially Clear)
 
 Initial state:
 
@@ -224,7 +224,7 @@ Initial state:
 ```ruby
 strio = StringIO.new('foo', 'a+')
 strio.pos    # => 0      # Beginning-of-stream.
-strio.string # => "foo"  # Not truncated.
+strio.string # => "foo"  # Not cleared.
 ```
 
 May be written only at the end; #rewind; position does not affect writing:
