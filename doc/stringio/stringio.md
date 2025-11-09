@@ -1,5 +1,5 @@
 \Class \StringIO supports accessing a string as a stream,
-similar in some ways to [class IO][class io].
+similar in some ways to [class IO][io class].
 
 You can create a \StingIO instance using:
 
@@ -256,9 +256,9 @@ To specify whether the stream is to be treated as text or as binary data,
 either of the following may be suffixed to any of the string read/write modes above:
 
 - `'t'`: Text;
-  sets the default external encoding to Encoding::UTF_8.
+  initializes the encoding as Encoding::UTF_8.
 - `'b'`: Binary;
-  sets the default external encoding to Encoding::ASCII_8BIT.
+  initializes the encoding as Encoding::ASCII_8BIT.
 
 If neither is given, the stream defaults to text data.
 
@@ -282,12 +282,33 @@ a binary stream may not be changed to text.
 
 ### Encodings
 
-- #external_encoding: returns the current encoding of the stream.
-- #internal_encoding: returns +nil+.
+A stream has an encoding; see the [encodings document][encodings document].
+
+The initial encoding for a new or re-opened stream depends on its [data mode][data mode]:
+
+- Text: `Encoding::UTF_8`.
+- Binary: `Encoding::ASCII_8BIT`.
+
+These instance methods are relevant:
+
+- #external_encoding: returns the current encoding of the stream as an `Encoding` object.
+- #internal_encoding: returns +nil+; a stream does not have an internal encoding.
 - #set_encoding: sets the encoding for the stream.
 - #set_encoding_by_bom: sets the encoding for the stream to the stream's BOM (byte order mark).
 
-- data mode
+Examples:
+
+```ruby
+strio = StringIO.new('foo', 'rt')  # Text mode.
+strio.external_encoding # => #<Encoding:UTF-8>
+data = "\u9990\u9991\u9992\u9993\u9994"
+strio = StringIO.new(data, 'rb') # Binary mode.
+strio.external_encoding # => #<Encoding:BINARY (ASCII-8BIT)>
+strio = StringIO.new('foo')
+strio.external_encoding # => #<Encoding:UTF-8>
+strio.set_encoding('US-ASCII')
+strio.external_encoding # => #<Encoding:US-ASCII>
+```
 
 ### Position
 
@@ -296,7 +317,7 @@ The initial position of a stream is zero.
 
 #### Getting and Setting the Position
 
-Each of these methods initializes (to zero) the position of a new or re-initialized stream:
+Each of these methods initializes (to zero) the position of a new or re-opened stream:
 
 - ::new(string = '', mode = 'r+'): returns a new stream.
 - ::open(string = '', mode = 'r+'): passes a new stream to the block.
@@ -407,7 +428,6 @@ strio.pos    # => 0
 strio.string # => "xxo"
 ```
 
-
 This method does not affect the position:
 
 - #truncate(size): truncates the stream's string to the given size.
@@ -428,14 +448,58 @@ strio.pos    # => 500
 
 ### Line Number
 
-[TODO]
+A stream has a line number, which initially is zero:
+
+- Method #lineno returns the line number.
+- Method #lineno= sets the line number.
+
+The line number can be affected by reading (but never by writing);
+in general, the line number is incremented each time the record separator (default: `"\n"`) is read.
+
+Examples:
+
+```ruby
+strio = StringIO.new(TEXT)
+strio.string # => "First line\nSecond line\n\nFourth line\nFifth line\n"
+strio.lineno # => 0
+strio.gets   # => "First line\n"
+strio.lineno # => 1
+strio.getc   # => "S"
+strio.lineno # => 1
+strio.gets   # => "econd line\n"
+strio.lineno # => 2
+strio.gets   # => "\n"
+strio.lineno # => 3
+strio.gets   # => "Fourth line\n"
+strio.lineno # => 4
+```
+
+Setting the position does not affect the line number:
+
+```ruby
+strio.pos = 0
+strio.lineno # => 4
+strio.gets   # => "First line\n"
+strio.pos    # => 11
+strio.lineno # => 5
+```
+
+And setting the line number does not affect the position:
+
+```ruby
+strio.lineno = 10
+strio.pos    # => 11
+strio.gets   # => "Second line\n"
+strio.lineno # => 11
+strio.pos    # => 23
+```
 
 ### Open/Closed Streams
 
 A new stream is open for either reading or writing, and may be open for both;
 see [Read/Write Mode][read/write mode].
 
-Each of these methods initializes the read/write mode for a new or re-initialized stream:
+Each of these methods initializes the read/write mode for a new or re-opened stream:
 
 - ::new(string = '', mode = 'r+'): returns a new stream.
 - ::open(string = '', mode = 'r+'): passes a new stream to the block.
@@ -539,9 +603,10 @@ Reading:
 
 - #each_codepoint: reads each remaining codepoint, passing it to the block.
 
-[class io]:        https://docs.ruby-lang.org/en/master/IO.html
-[kernel#puts]:     https://docs.ruby-lang.org/en/master/Kernel.html#method-i-puts
-[kernel#readline]: https://docs.ruby-lang.org/en/master/Kernel.html#method-i-readline
+[encodings document]: https://docs.ruby-lang.org/en/master/encodings_rdoc.html
+[io class]:           https://docs.ruby-lang.org/en/master/IO.html
+[kernel#puts]:        https://docs.ruby-lang.org/en/master/Kernel.html#method-i-puts
+[kernel#readline]:    https://docs.ruby-lang.org/en/master/Kernel.html#method-i-readline
 
 [basic reading]:       rdoc-ref:StringIO@Basic+Reading
 [basic writing]:       rdoc-ref:StringIO@Basic+Writing
