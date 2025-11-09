@@ -617,9 +617,16 @@ Reading:
 [position]:            rdoc-ref:StringIO@Position
 [read/write mode]:     rdoc-ref:StringIO@Read-2FWrite+Mode
 
+
 <!--
 
 TODO:
 - Add File constants (e.g., File::RDONLY) to Data Mode section.
+
+- Investigate BOM.
+  - May be honored and removed at create time;  if so:
+      - That's another wrinkle on initial encoding;  does it override the data mode?
+      - May only need #set_encoding_by_bom if BOM added after creation.
+  - Does #set_encoding_by_bom remove the BOM?
 
 -->
