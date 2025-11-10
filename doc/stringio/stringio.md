@@ -18,10 +18,10 @@ Like an \IO stream, a \StringIO stream has certain properties:
   see [Position][position].
 - **Line number**: a special, line-oriented, "position" (different from the position mentioned above);
   see [Line Number][line number].
-  - **Open/closed**: whether the stream is open or closed, for reading or writing.
-    see [Open/Closed Streams][open/closed streams].
-- **End-of-stream**: whether the position is at the end of the stream;
-  see [End-of-Stream][end-of-stream].
+- **Open/closed**: whether the stream is open or closed, for reading or writing.
+  see [Open/Closed Streams][open/closed streams].
+- **BOM**: byte mark order;
+  see [Byte Order Mark][byte order mark].
 
 ## About the Examples
 
@@ -517,6 +517,45 @@ Other relevant methods:
 - #closed_read?: returns whether the stream is closed for reading.
 - #closed_write?: returns whether the stream is closed for writing.
 
+### BOM (Byte Order Mark)
+
+The string provided for ::new, ::open, or #reopen
+may contain an optional [BOM][bom] (byte order mark) at the beginning of the string;
+the BOM can affect the stream's encoding.
+
+The BOM (if provided):
+
+- Is stored as part of the stream's string.
+- Does _not_ immediately affect the encoding.
+- Is _initially_ considered part of the stream.
+
+```ruby
+
+utf8_bom = "\xEF\xBB\xBF"
+string = utf8_bom + 'foo'
+string.bytes               # => [239, 187, 191, 102, 111, 111]
+strio.string.bytes.take(3) # => [239, 187, 191]                  # The BOM.
+strio = StringIO.new(string, 'rb')
+strio.string.bytes         # => [239, 187, 191, 102, 111, 111]   # BOM is part of the stored string.
+strio.external_encoding    # => #<Encoding:BINARY (ASCII-8BIT)>  # Default for a binary stream.
+strio.gets                 # => "\xEF\xBB\xBFfoo"                # BOM is part of the stream.
+```
+
+You can call instance method #set_encoding_by_bom to "activate" the stored BOM;
+after doing so the BOM:
+
+- Is _still_ stored as part of the stream's string.
+- _Determines_ (and may have changed) the stream's encoding.
+- Is _no longer_ considered part of the stream.
+
+```ruby
+strio.set_encoding_by_bom
+strio.string.bytes      # => [239, 187, 191, 102, 111, 111]  # BOM is still part of the stored string.
+strio.external_encoding # => #<Encoding:UTF-8>               # The new encoding.
+strio.rewind            # => 0
+strio.gets              # => "foo"                           # BOM is not part of the stream.
+```
+
 ## Basic Stream \IO
 
 ### Basic Reading
@@ -602,20 +641,22 @@ Reading:
 
 - #each_codepoint: reads each remaining codepoint, passing it to the block.
 
+[bom]:                https://en.wikipedia.org/wiki/Byte_order_mark
 [encodings document]: https://docs.ruby-lang.org/en/master/encodings_rdoc.html
 [io class]:           https://docs.ruby-lang.org/en/master/IO.html
 [kernel#puts]:        https://docs.ruby-lang.org/en/master/Kernel.html#method-i-puts
 [kernel#readline]:    https://docs.ruby-lang.org/en/master/Kernel.html#method-i-readline
 
-[basic reading]:       rdoc-ref:StringIO@Basic+Reading
-[basic writing]:       rdoc-ref:StringIO@Basic+Writing
-[data mode]:           rdoc-ref:StringIO@Data+Mode
-[encodings]:           rdoc-ref:StringIO@Encodings
-[end-of-stream]:       rdoc-ref:StringIO@End-of-Stream
-[line number]:         rdoc-ref:StringIO@Line+Number
-[open/closed streams]: rdoc-ref:StringIO@Open-2FClosed+Streams
-[position]:            rdoc-ref:StringIO@Position
-[read/write mode]:     rdoc-ref:StringIO@Read-2FWrite+Mode
+[basic reading]:         rdoc-ref:StringIO@Basic+Reading
+[basic writing]:         rdoc-ref:StringIO@Basic+Writing
+[bom (byte order mark)]: rdoc-ref:StringIO@BOM+-28Byte+Order+Mark-29
+[data mode]:             rdoc-ref:StringIO@Data+Mode
+[encodings]:             rdoc-ref:StringIO@Encodings
+[end-of-stream]:         rdoc-ref:StringIO@End-of-Stream
+[line number]:           rdoc-ref:StringIO@Line+Number
+[open/closed streams]:   rdoc-ref:StringIO@Open-2FClosed+Streams
+[position]:              rdoc-ref:StringIO@Position
+[read/write mode]:       rdoc-ref:StringIO@Read-2FWrite+Mode
 
 
 <!--
@@ -624,9 +665,7 @@ TODO:
 - Add File constants (e.g., File::RDONLY) to Data Mode section.
 
 - Investigate BOM.
-  - May be honored and removed at create time;  if so:
-      - That's another wrinkle on initial encoding;  does it override the data mode?
-      - May only need #set_encoding_by_bom if BOM added after creation.
-  - Does #set_encoding_by_bom remove the BOM?
-
+  - Removed and saved at create time, but not honored.
+  - Honored only if #set_encoding_by_bom is called.
+  - #set_encoding_by_bom sets to #<Encoding:UTF-8> if no BOM.
 -->
