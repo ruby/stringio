@@ -58,7 +58,22 @@ EOT
 | <tt>'w+'</tt>: read-write  |      Yes       | Anywhere | Anywhere |
 | <tt>'a+'</tt>: read/append |       No       | Anywhere | End only |
 
+Each section below describes a read/write mode.
+
+Any of the modes may be given as a string or as file constants;
+example:
+
+```ruby
+strio = StringIO.new('foo', 'a')
+strio = StringIO.new('foo', File::WRONLY | File::APPEND)
+```
+
 #### `'r'`: Read-Only
+
+Mode specified as one of:
+
+- String: `'r'`.
+- Constant: `File::RDONLY`.
 
 Initial state:
 
@@ -84,6 +99,11 @@ strio.write('foo')  # Raises IOError: not opened for writing
 ```
 
 #### `'w'`: Write-Only
+
+Mode specified as one of:
+
+- String: `'w'`.
+- Constant: `File::WRONLY`.
 
 Initial state:
 
@@ -117,6 +137,11 @@ strio.read  # Raises IOError: not opened for reading
 
 #### `'a'`: Append-Only
 
+Mode specified as one of:
+
+- String: `'a'`.
+- Constant: `File::WRONLY | File::APPEND`.
+
 Initial state:
 
 ```ruby
@@ -144,6 +169,11 @@ strio.gets  # Raises IOError: not opened for reading
 ```
 
 #### `'r+'`: Read/Write
+
+Mode specified as one of:
+
+- String: `'r+'`.
+- Constant: `File::RDRW`.
 
 Initial state:
 
@@ -179,6 +209,11 @@ strio.gets(3) # => nil
 ```
 
 #### `'w+'`: Read/Write (Initially Clear)
+
+Mode specified as one of:
+
+- String: `'w+'`.
+- Constant: `File::RDWR | File::TRUNC`.
 
 Initial state:
 
@@ -219,6 +254,11 @@ strio.gets(3) # => nil
 
 #### `'a+'`: Read/Append
 
+Mode specified as one of:
+
+- String: `'a+'`.
+- Constant: `File::RDWR | File::APPEND`.
+
 Initial state:
 
 ```ruby
@@ -250,6 +290,7 @@ strio.gets(3) # => "bat"
 strio.pos = 400
 strio.gets(3) # => nil
 ```
+
 ### Data Mode
 
 To specify whether the stream is to be treated as text or as binary data,
@@ -530,7 +571,6 @@ The BOM (if provided):
 - Is _initially_ considered part of the stream.
 
 ```ruby
-
 utf8_bom = "\xEF\xBB\xBF"
 string = utf8_bom + 'foo'
 string.bytes               # => [239, 187, 191, 102, 111, 111]
@@ -657,15 +697,3 @@ Reading:
 [open/closed streams]:   rdoc-ref:StringIO@Open-2FClosed+Streams
 [position]:              rdoc-ref:StringIO@Position
 [read/write mode]:       rdoc-ref:StringIO@Read-2FWrite+Mode
-
-
-<!--
-
-TODO:
-- Add File constants (e.g., File::RDONLY) to Data Mode section.
-
-- Investigate BOM.
-  - Removed and saved at create time, but not honored.
-  - Honored only if #set_encoding_by_bom is called.
-  - #set_encoding_by_bom sets to #<Encoding:UTF-8> if no BOM.
--->
