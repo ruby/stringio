@@ -1,5 +1,36 @@
 # News
 
+## 3.1.8 - 2025-11-12
+
+### Improvements
+
+  * Improved documents
+    * Patch by Burdette Lamar
+
+### Fixes
+
+  * Fixed SEGV in `StringIO#seek` with `SEEK_END` on `StringIO.new(nil)`
+    * GH-137
+    * Patch by koh-sh
+
+  * Fixed SEGV in `StringIO#read` on `StringIO.new(nil)`
+
+  * Fixed SEGV in `StringIO#pread` on `StringIO.new(nil)`
+
+  * Fixed SEGV in `StringIO#eof?` on `StringIO.new(nil)`
+
+  * JRuby: Fixed a bug that `StringIO#read` doesn't clear code range
+    * GH-156
+    * Patch by Karol Bucek
+
+### Thanks
+
+  * koh-sh
+
+  * Burdette Lamar
+
+  * Karol Bucek
+
 ## 3.1.7 - 2025-04-21
 
 ### Improvements
