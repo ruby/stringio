@@ -1,7 +1,7 @@
 \Class \StringIO supports accessing a string as a stream,
 similar in some ways to [class IO][io class].
 
-You can create a \StingIO instance using:
+You can create a \StringIO instance using:
 
 - StringIO.new(string): returns a new \StringIO object containing the given string.
 - StringIO.open(string): passes a new \StringIO object to the given block.
@@ -21,7 +21,7 @@ Like an \IO stream, a \StringIO stream has certain properties:
 - **Open/closed**: whether the stream is open or closed, for reading or writing.
   see [Open/Closed Streams][open/closed streams].
 - **BOM**: byte mark order;
-  see [Byte Order Mark][byte order mark].
+  see [Byte Order Mark][bom (byte order mark)].
 
 ## About the Examples
 
