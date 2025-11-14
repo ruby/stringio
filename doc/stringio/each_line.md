@@ -30,7 +30,7 @@ Output:
 With only string argument `sep` given,
 reads lines using that string as the record separator:
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.each_line(' ') {|line| p line }
 ```
@@ -51,7 +51,7 @@ With only integer argument `limit` given,
 reads lines using the default record separator;
 also limits the size (in characters) of each line to the given limit:
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.each_line(10) {|line| p line }
 ```
@@ -69,12 +69,13 @@ Output:
 "Fifth line"
 "\n"
 ```
+
 **Arguments `sep` and `limit`**
 
 With arguments `sep` and `limit` both given,
 honors both:
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.each_line(' ', 10) {|line| p line }
 ```
@@ -99,7 +100,7 @@ As stated above, method `each` _remaining_ line in the stream.
 In the examples above each `strio` object starts with its position at beginning-of-stream;
 but in other cases the position may be anywhere (see StringIO#pos):
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.pos = 30 # Set stream position to character 30.
 strio.each_line {|line| p line }
@@ -128,6 +129,7 @@ strio.each_line {|line| p line }
 
 Output:
 
+```
 "んにちは"
 "\x82\x93にちは"
 "\x93にちは"
@@ -138,7 +140,7 @@ Output:
 Like some methods in class `IO`, StringIO.each honors two special record separators;
 see {Special Line Separators}[https://docs.ruby-lang.org/en/master/IO.html#class-IO-label-Special+Line+Separator+Values].
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.each_line('') {|line| p line } # Read as paragraphs (separated by blank lines).
 ```
@@ -150,7 +152,7 @@ Output:
 "Fourth line\nFifth line\n"
 ```
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.each_line(nil) {|line| p line } # "Slurp"; read it all.
 ```
@@ -166,7 +168,7 @@ Output:
 With keyword argument `chomp` given as `true` (the default is `false`),
 removes trailing newline (if any) from each line:
 
-```
+```ruby
 strio = StringIO.new(TEXT)
 strio.each_line(chomp: true) {|line| p line }
 ```
@@ -182,5 +184,6 @@ Output:
 ```
 
 With no block given, returns a new {Enumerator}[https://docs.ruby-lang.org/en/master/Enumerator.html].
+
 
 Related: StringIO.each_byte, StringIO.each_char, StringIO.each_codepoint.
