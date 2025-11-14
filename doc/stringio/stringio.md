@@ -27,13 +27,13 @@ Like an \IO stream, a \StringIO stream has certain properties:
 
 Examples on this page assume that \StringIO has been required:
 
-```
+```ruby
 require 'stringio'
 ```
 
 And that this constant has been defined:
 
-```
+```ruby
 TEXT = <<EOT
 First line
 Second line
