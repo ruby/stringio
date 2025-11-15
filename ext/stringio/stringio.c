@@ -883,9 +883,9 @@ strio_rewind(VALUE self)
  * call-seq:
  *   seek(offset, whence = SEEK_SET) -> 0
  *
- * Sets the current position to the given integer +offset+ (in bytes),
+ * Sets the position to the given integer +offset+ (in bytes),
  * with respect to a given constant +whence+;
- * see {Position}[rdoc-ref:IO@Position].
+ * see {IO#seek}[https://docs.ruby-lang.org/en/master/IO.html#method-i-seek].
  */
 static VALUE
 strio_seek(int argc, VALUE *argv, VALUE self)
