@@ -7,6 +7,9 @@
   * Improved documents
     * Patch by Burdette Lamar
 
+  * Improved chilled string support
+    * GH-128
+
 ### Fixes
 
   * Fixed SEGV in `StringIO#seek` with `SEEK_END` on `StringIO.new(nil)`
