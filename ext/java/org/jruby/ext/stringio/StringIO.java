@@ -92,6 +92,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         volatile Object owner;
     }
     private StringIOData ptr;
+    private byte flags;
 
     // MRI: get_strio, StringIO macro
     private StringIOData getPtr() {
@@ -103,9 +104,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     private static final String
     STRINGIO_VERSION = "3.1.9";
 
-    private static final int STRIO_READABLE = ObjectFlags.registry.newFlag(StringIO.class);
-    private static final int STRIO_WRITABLE = ObjectFlags.registry.newFlag(StringIO.class);
-    private static final int STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
+    private static final byte STRIO_READABLE = 1;
+    private static final byte STRIO_WRITABLE = 2;
+    private static final byte STRIO_READWRITE = (STRIO_READABLE | STRIO_WRITABLE);
 
     private static final AtomicReferenceFieldUpdater<StringIOData, Object> LOCKED_UPDATER = AtomicReferenceFieldUpdater.newUpdater(StringIOData.class, Object.class, "owner");
 
@@ -412,7 +413,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (this == otherIO) return this;
 
         ptr = otherIO.getPtr();
-        flags = flags & ~STRIO_READWRITE | otherIO.flags & STRIO_READWRITE;
+        flags = (byte) (flags & ~STRIO_READWRITE | otherIO.flags & STRIO_READWRITE);
 
         return this;
     }
@@ -483,7 +484,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
         int flags = this.flags;
         if ( ( flags & STRIO_READABLE ) != 0 ) {
-            this.flags = flags & ~STRIO_READABLE;
+            this.flags = (byte) (flags & ~STRIO_READABLE);
         }
         return context.nil;
     }
@@ -503,7 +504,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
         int flags = this.flags;
         if ( ( flags & STRIO_WRITABLE ) != 0 ) {
-            this.flags = flags & ~STRIO_WRITABLE;
+            this.flags = (byte) (flags & ~STRIO_WRITABLE);
         }
         return context.nil;
     }
