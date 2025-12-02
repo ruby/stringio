@@ -1,5 +1,35 @@
 # News
 
+## 3.1.9 - 2025-12-01
+
+### Improvements
+
+  * [DOC] Tweaks for StringIO#each_line
+    * GH-165
+
+  * [DOC] Doc for StringIO.size
+    * GH-175
+
+  * [DOC] Tweaks for StringIO#fsync
+    * GH-173
+
+  * [DOC] Fix #seek link
+    * GH-174
+
+  * Add a note about chilled string support to 3.1.8 release note
+    * GH-180 fixes GH-179
+
+### Fixes
+
+  * JRuby: Removed use of RubyBasicObject.flags
+    * GH-182
+
+### Thanks
+
+  * Burdette Lamar
+
+  * Charles Oliver Nutter
+
 ## 3.1.8 - 2025-11-12
 
 ### Improvements
