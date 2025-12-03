@@ -3,8 +3,8 @@ similar in some ways to [class IO][io class].
 
 You can create a \StringIO instance using:
 
-- StringIO.new(string): returns a new \StringIO object containing the given string.
-- StringIO.open(string): passes a new \StringIO object to the given block.
+- StringIO.new: returns a new \StringIO object containing the given string.
+- StringIO.open: passes a new \StringIO object to the given block.
 
 Like an \IO stream, a \StringIO stream has certain properties:
 
@@ -310,7 +310,8 @@ strio = StringIO.new('foo', 'rt')
 strio.external_encoding # => #<Encoding:UTF-8>
 data = "\u9990\u9991\u9992\u9993\u9994"
 strio = StringIO.new(data, 'rb')
-strio.external_encoding # => #<Encoding:BINARY (ASCII-8BIT)>```
+strio.external_encoding # => #<Encoding:BINARY (ASCII-8BIT)>
+```
 
 When the data mode is specified, the read/write mode may not be omitted:
 
@@ -360,9 +361,9 @@ The initial position of a stream is zero.
 
 Each of these methods initializes (to zero) the position of a new or re-opened stream:
 
-- ::new(string = '', mode = 'r+'): returns a new stream.
-- ::open(string = '', mode = 'r+'): passes a new stream to the block.
-- #reopen(string = '', mode = 'r+'): re-initializes the stream.
+- ::new: returns a new stream.
+- ::open: passes a new stream to the block.
+- #reopen: re-initializes the stream.
 
 Each of these methods queries, gets, or sets the position, without otherwise changing the stream:
 
@@ -429,9 +430,9 @@ strio.pos # => 47  ## End-of-stream.
 Each of these methods begins writing at the current position,
 and advances the position to the end of the written substring:
 
-- #putc(character): writes a given character.
+- #putc: writes the given character.
 - #write: writes the given objects as strings.
-- [Kernel#puts][kernel#puts] writes given objects as strings, each followed by newline.
+- [Kernel#puts][kernel#puts]: writes given objects as strings, each followed by newline.
 
 Examples:
 
@@ -456,8 +457,8 @@ strio.pos    # => 11
 Each of these methods writes _before_ the current position, and decrements the position
 so that the written data is next to be read:
 
-- #ungetbyte(byte): unshifts the given byte.
-- #ungetc(character): unshifts the given character.
+- #ungetbyte: unshifts the given byte.
+- #ungetc: unshifts the given character.
 
 Examples:
 
@@ -474,7 +475,7 @@ strio.string # => "xxo"
 
 This method does not affect the position:
 
-- #truncate(size): truncates the stream's string to the given size.
+- #truncate: truncates the stream's string to the given size.
 
 Examples:
 
@@ -545,9 +546,9 @@ see [Read/Write Mode][read/write mode].
 
 Each of these methods initializes the read/write mode for a new or re-opened stream:
 
-- ::new(string = '', mode = 'r+'): returns a new stream.
-- ::open(string = '', mode = 'r+'): passes a new stream to the block.
-- #reopen(string = '', mode = 'r+'): re-initializes the stream.
+- ::new: returns a new stream.
+- ::open: passes a new stream to the block.
+- #reopen: re-initializes the stream.
 
 Other relevant methods:
 
@@ -624,7 +625,7 @@ This instance method is useful in a multi-threaded application:
 
 You can write to the stream, advancing the position, using these instance methods:
 
-- #putc(character): writes a given character.
+- #putc: writes a given character.
 - #write: writes the given objects as strings.
 - [Kernel#puts][kernel#puts] writes given objects as strings, each followed by newline.
 
@@ -632,21 +633,21 @@ You can "unshift" to the stream using these instance methods;
 each  writes _before_ the current position, and decrements the position
 so that the written data is next to be read.
 
-- #ungetbyte(byte): unshifts the given byte.
-- #ungetc(character): unshifts the given character.
+- #ungetbyte: unshifts the given byte.
+- #ungetc: unshifts the given character.
 
 One more writing method:
 
-- #truncate(size): truncates the stream's string to the given size.
+- #truncate: truncates the stream's string to the given size.
 
 ## Line \IO
 
 Reading:
 
 - #gets: reads and returns the next line.
-- #each_line: reads each remaining line, passing it to the block
-- #readlines: reads the remaining data the stream and returns an array of its lines.
 - [Kernel#readline][kernel#readline]: like #gets, but raises an exception if at end-of-stream.
+- #readlines: reads the remaining data the stream and returns an array of its lines.
+- #each_line: reads each remaining line, passing it to the block
 
 Writing:
 
