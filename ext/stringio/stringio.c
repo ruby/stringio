@@ -774,7 +774,7 @@ strio_set_lineno(VALUE self, VALUE lineno)
  *   binmode -> self
  *
  * Sets the data mode in +self+ to binary mode;
- * see {Data Mode}[https://docs.ruby-lang.org/en/master/File.html#class-File-label-Data+Mode].
+ * see {Data Mode}[rdoc-ref:StringIO@Data+Mode].
  *
  */
 static VALUE
