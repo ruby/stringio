@@ -1,0 +1,3 @@
+Reads and returns bytes from the stream.
+
+With no arguments,
