@@ -1,0 +1,72 @@
+Replaces one or more bytes at position +pos+
+with bytes of the given argument;
+returns the argument.
+
+\StringIO object for 1-byte characters.
+
+  strio = StringIO.new('foo')
+
+With 1-byte argument, replaces one byte:
+
+  strio.putc('b')
+  strio.string    # => "boo"
+  strio.putc('a') # => "a"
+  strio.string    # => "bao"
+  strio.putc('r') # => "r"
+  strio.string    # => "bar"
+  strio.putc('n') # => "n"
+  strio.string    # => "barn"
+
+Fills with null characters if necessary:
+
+  strio.pos = 6
+  strio.putc('x') # => "x"
+  strio.string    # => "barn\u0000\u0000x"
+
+With integer argument, replaces one byte with the low-order byte of the integer:
+
+  strio = StringIO.new('foo')
+  strio.putc(70)
+  strio.string # => "Foo"
+  strio.putc(79)
+  strio.string # => "FOo"
+  strio.putc(79 + 1024)
+  strio.string # => "FOO"
+
+\StringIO object for Multi-byte characters:
+
+  greek = 'αβγδε' # Five 2-byte characters.
+  strio = StringIO.new(greek)
+  strio.string# => "αβγδε"
+  strio.string.b        # => "\xCE\xB1\xCE\xB2\xCE\xB3\xCE\xB4\xCE\xB5"
+  strio.string.bytesize # => 10
+  strio.string.chars    # => ["α", "β", "γ", "δ", "ε"]
+  strio.string.size     # => 5
+
+With 1-byte argument, replaces one byte of the string:
+
+  strio.putc(' ')       # 1-byte ascii space.
+  strio.string          # => " \xB1βγδε"
+  strio.string.b        # => " \xB1\xCE\xB2\xCE\xB3\xCE\xB4\xCE\xB5"
+  strio.string.bytesize # => 10
+  strio.string.chars    # => [" ", "\xB1", "β", "γ", "δ", "ε"]
+  strio.string.size     # => 6
+
+  strio.putc(' ')
+  strio.string          # => "  βγδε"
+  strio.string.b        # => "  \xCE\xB2\xCE\xB3\xCE\xB4\xCE\xB5"
+  strio.string.bytesize # => 10
+  strio.string.chars    # => [" ", " ", "β", "γ", "δ", "ε"]
+  strio.string.size     # => 6
+
+With 2-byte argument, replaces two bytes of the string:
+
+  strio.rewind
+  strio.putc('α')
+  strio.string          # => "αβγδε"
+  strio.string.b        # => "\xCE\xB1\xCE\xB2\xCE\xB3\xCE\xB4\xCE\xB5"
+  strio.string.bytesize # => 10
+  strio.string.chars    # => ["α", "β", "γ", "δ", "ε"]
+  strio.string.size     # => 5
+
+Related: #getc, #ungetc.
