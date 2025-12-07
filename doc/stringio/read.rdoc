@@ -25,9 +25,9 @@ returns a new string containing the bytes read, or +nil+ if none:
   russian.b
   # => "\xD0\x9F\xD1\x80\xD0\xB8\xD0\xB2\xD0\xB5\xD1\x82"
   strio = StringIO.new(russian)
-  strio.read(6)      # => "\xD0\x9F\xD1\x80\xD0\xB8"
-  strio.read(6)      # => "\xD0\xB2\xD0\xB5\xD1\x82"
-  strio.read(6)      # => nil
+  strio.read(6) # => "\xD0\x9F\xD1\x80\xD0\xB8"
+  strio.read(6) # => "\xD0\xB2\xD0\xB5\xD1\x82"
+  strio.read(6) # => nil
 
   japanese = 'こんにちは'
   japanese.b
