@@ -95,4 +95,5 @@ removes the trailing newline (if any) from the returned line:
   strio.gets              # => "First line\n"
   strio.gets(chomp: true) # => "Second line"
 
-Related: StringIO.each_line.
+Related: #each_line, #readlines,
+{Kernel#puts}[https://docs.ruby-lang.org/en/master/Kernel.html#method-i-puts].

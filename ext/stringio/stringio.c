@@ -13,7 +13,7 @@
 **********************************************************************/
 
 static const char *const
-STRINGIO_VERSION = "3.1.10";
+STRINGIO_VERSION = "3.2.1";
 
 #include <stdbool.h>
 
@@ -747,7 +747,7 @@ strio_copy(VALUE copy, VALUE orig)
  *   lineno -> current_line_number
  *
  * Returns the current line number in +self+;
- * see {Line Number}[rdoc-ref:IO@Line+Number].
+ * see {Line Number}[rdoc-ref:StringIO@Line+Number].
  */
 static VALUE
 strio_get_lineno(VALUE self)
@@ -760,7 +760,7 @@ strio_get_lineno(VALUE self)
  *   lineno = new_line_number -> new_line_number
  *
  * Sets the current line number in +self+ to the given +new_line_number+;
- * see {Line Number}[rdoc-ref:IO@Line+Number].
+ * see {Line Number}[rdoc-ref:StringIO@Line+Number].
  */
 static VALUE
 strio_set_lineno(VALUE self, VALUE lineno)
@@ -835,7 +835,7 @@ strio_reopen(int argc, VALUE *argv, VALUE self)
  *   pos -> stream_position
  *
  * Returns the current position (in bytes);
- * see {Position}[rdoc-ref:IO@Position].
+ * see {Position}[rdoc-ref:StringIO@Position].
  */
 static VALUE
 strio_get_pos(VALUE self)
@@ -848,7 +848,7 @@ strio_get_pos(VALUE self)
  *   pos = new_position -> new_position
  *
  * Sets the current position (in bytes);
- * see {Position}[rdoc-ref:IO@Position].
+ * see {Position}[rdoc-ref:StringIO@Position].
  */
 static VALUE
 strio_set_pos(VALUE self, VALUE pos)
@@ -1615,9 +1615,10 @@ strio_write(VALUE self, VALUE str)
 
 /*
  * call-seq:
- *   strio.putc(obj)    -> obj
+ *   putc(object) -> object
  *
- * See IO#putc.
+ * :include: stringio/putc.rdoc
+ *
  */
 static VALUE
 strio_putc(VALUE self, VALUE ch)
@@ -1649,9 +1650,10 @@ strio_putc(VALUE self, VALUE ch)
 
 /*
  * call-seq:
- *   strio.read([length [, outbuf]])    -> string, outbuf, or nil
+ *   read(maxlen = nil, out_string = nil) → new_string, out_string, or nil
  *
- * See IO#read.
+ * :include: stringio/read.rdoc
+ *
  */
 static VALUE
 strio_read(int argc, VALUE *argv, VALUE self)
@@ -1723,10 +1725,10 @@ strio_read(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *    pread(maxlen, offset)             -> string
- *    pread(maxlen, offset, out_string) -> string
+ *    pread(maxlen, offset, out_string = nil) -> new_string or out_string
  *
- *  See IO#pread.
+ *  :include: stringio/pread.rdoc
+ *
  */
 static VALUE
 strio_pread(int argc, VALUE *argv, VALUE self)
@@ -1888,7 +1890,7 @@ strio_truncate(VALUE self, VALUE len)
  *   external_encoding -> encoding or nil
  *
  * Returns an Encoding object that represents the encoding of the string;
- * see {Encoding}[https://docs.ruby-lang.org/en/master/Encoding.html]:
+ * see {Encodings}[rdoc-ref:StringIO@Encodings]:
  *
  *   strio = StringIO.new('foo')
  *   strio.external_encoding # => #<Encoding:UTF-8>

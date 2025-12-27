@@ -1,5 +1,24 @@
 # News
 
+## 3.2.0 - 2025-12-17
+
+### Improvements
+
+  * Improved documents.
+    * GH-179
+    * GH-188
+    * GH-189
+    * GH-190
+    * GH-191
+    * GH-192
+    * GH-193
+    * GH-194
+    * Patch by Burdette Lamar
+
+### Thanks
+
+  * Burdette Lamar
+
 ## 3.1.9 - 2025-12-01
 
 ### Improvements
