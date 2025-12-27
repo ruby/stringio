@@ -14,12 +14,6 @@ Returns +nil+ if at end-of-stream:
 
 Returns a byte, not a character:
 
-  s = 'тест'
-  s.bytes       # => [209, 130, 208, 181, 209, 129, 209, 130]
-  strio = StringIO.new(s)
-  strio.getbyte # => 209
-  strio.getbyte # => 130
-
   s = 'こんにちは'
   s.bytes       # => [227, 129, 147, 227, 130, 147, 227, 129, 171, 227, 129, 161, 227, 129, 175]
   strio = StringIO.new(s)

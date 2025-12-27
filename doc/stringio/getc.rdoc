@@ -12,10 +12,6 @@ Returns +nil+ if at end-of-stream:
 
 Returns characters, not bytes:
 
-  strio = StringIO.new('тест')
-  strio.getc # => "т"
-  strio.getc # => "е"
-
   strio = StringIO.new('こんにちは')
   strio.getc # => "こ"
   strio.getc # => "ん"
