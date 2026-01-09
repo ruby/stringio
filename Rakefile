@@ -11,8 +11,7 @@ when "jruby"
   require 'rake/javaextensiontask'
   extask = Rake::JavaExtensionTask.new("stringio") do |ext|
     ext.lib_dir << "/#{ext.platform}"
-    ext.source_version = '1.8'
-    ext.target_version = '1.8'
+    ext.release = '8'
     ext.ext_dir = 'ext/java'
   end
   libs = [extask.lib_dir]
