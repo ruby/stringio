@@ -4,8 +4,8 @@ gemspec
 
 group :development do
   gem 'rake-compiler'
+  gem 'jar-dependencies', '0.5.6.pre1'
   gem 'rdoc'
-  gem 'ruby-maven', :platforms => :jruby
   gem 'test-unit'
   gem 'test-unit-ruby-core'
   gem 'ruby-core-tasks', github: 'ruby/ruby-core-tasks'
