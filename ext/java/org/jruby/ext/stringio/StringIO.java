@@ -912,7 +912,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                     }
                 }
                 s = p;
-                while ((p = StringSupport.memchr(stringBytes, p, '\n', e - p)) != -1 && (p != e)) {
+                while ((p = Helpers.memchr(stringBytes, p, '\n', e - p)) != -1 && (p != e)) {
                     p++;
                     if (!((p < e && stringBytes[p] == '\n') ||
                             (p + 1 < e && stringBytes[p] == '\r' && stringBytes[p+1] == '\n'))) {
@@ -933,7 +933,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             } else if (n == 1) {
                 RubyString strStr = (RubyString) rs;
                 ByteList strByteList = strStr.getByteList();
-                if ((p = StringSupport.memchr(stringBytes, s, strByteList.get(0), e - s)) != -1) {
+                if ((p = Helpers.memchr(stringBytes, s, strByteList.get(0), e - s)) != -1) {
                     e = p + 1;
                     w = (chomp ? ((p > s && stringBytes[p-1] == '\r')?1:0) + 1 : 0);
                 }
