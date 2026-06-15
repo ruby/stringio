@@ -48,7 +48,7 @@ jobs:
       - name: Build
         run: |
           bundle exec rake compile
-      - uses: rubygems/configure-rubygems-credentials@v2.0.0
+      - uses: rubygems/configure-rubygems-credentials@v2.1.0
         if: github.ref_type == 'tag'
       - name: Push gems
         if: github.ref_type == 'tag'
