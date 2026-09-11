@@ -1566,7 +1566,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 }
                 strBytes = strBytelist.unsafeBytes();
                 s = strBytelist.begin();
-                if (rest > cl) Arrays.fill(strBytes, len, rest - cl, (byte) 0);
+                if (rest > cl) Arrays.fill(strBytes, s + len, s + len + rest - cl, (byte) 0);
                 pos -= cl;
             }
             if (ungetBytes != null) {
