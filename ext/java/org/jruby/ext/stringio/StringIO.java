@@ -685,12 +685,15 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         boolean locked = lock(context, ptr);
         try {
             int start = ptr.pos;
-            RubyString string = ptr.string;
-            int total = 1 + StringSupport.bytesToFixBrokenTrailingCharacter(string.getByteList(), start + 1);
+            ByteList bytes = ptr.string.getByteList();
+            int begin = bytes.getBegin();
+            // bound the character on the end of the string, the way rb_enc_mbclen does on RSTRING_END
+            int total = StringSupport.length(getEncoding(), bytes.getUnsafeBytes(),
+                    begin + start, begin + bytes.getRealSize());
 
             ptr.pos += total;
 
-            return context.runtime.newString(string.getByteList().makeShared(start, total));
+            return context.runtime.newString(bytes.makeShared(start, total));
         } finally {
             if (locked) unlock(ptr);
         }
