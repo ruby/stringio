@@ -34,6 +34,7 @@ STRINGIO_VERSION = "3.2.1";
 # define NUM2ULEN(num) NUM2ULONG(num)
 # define LEN2NUM(num) LONG2NUM(num)
 # define ULEN2NUM(num) ULONG2NUM(num)
+# define PRIdLEN "ld"
 typedef long rb_len_t;
 typedef unsigned long rb_ulen_t;
 #endif
@@ -1734,7 +1735,7 @@ strio_read(int argc, VALUE *argv, VALUE self)
 	if (!NIL_P(argv[0])) {
 	    len = NUM2LEN(argv[0]);
 	    if (len < 0) {
-		rb_raise(rb_eArgError, "negative length %ld given", len);
+		rb_raise(rb_eArgError, "negative length %"PRIdLEN" given", len);
 	    }
 	    if (eos_p(ptr)) {
 		if (!NIL_P(str)) rb_str_resize(str, 0);
