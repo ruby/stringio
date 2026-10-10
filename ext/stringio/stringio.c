@@ -960,15 +960,14 @@ strio_seek(int argc, VALUE *argv, VALUE self)
     if (CLOSED(self)) {
 	rb_raise(rb_eIOError, "closed stream");
     }
-    switch (whence) {
-      case Qnil:
-      case INT2FIX(0):
+    switch (NIL_P(whence) ? 0 : NUM2LONG(whence)) {
+      case 0:
 	offset = 0;
 	break;
-      case INT2FIX(1):
+      case 1:
 	offset = ptr->pos;
 	break;
-      case INT2FIX(2):
+      case 2:
 	if (NIL_P(ptr->string)) {
 	    offset = 0;
 	}
