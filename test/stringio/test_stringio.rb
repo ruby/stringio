@@ -143,6 +143,26 @@ class TestStringIO < Test::Unit::TestCase
     assert_string("", Encoding::UTF_8, StringIO.new("foo").gets(0))
   end
 
+  def test_gets_paragraph_with_limit
+    stringio = StringIO.new("a\n\n\n\nb\n\n\nc")
+    assert_equal("a", stringio.gets("", 1))
+    assert_equal("b", stringio.gets("", 1))
+    assert_equal("c", stringio.gets("", 1))
+    assert_nil(stringio.gets("", 1))
+
+    stringio = StringIO.new("a\n\n\n\nb")
+    assert_equal("a\n\n", stringio.gets("", 3))
+    assert_equal("b", stringio.gets("", 3))
+    assert_nil(stringio.gets("", 3))
+  end
+
+  def test_gets_paragraph_only_newlines
+    stringio = StringIO.new("\n\n\n")
+    assert_nil(stringio.gets(""))
+    assert_equal(3, stringio.pos)
+    assert_predicate(stringio, :eof?)
+  end
+
   def test_gets_utf_16
     stringio = StringIO.new("line1\nline2\nline3\n".encode("utf-16le"))
     assert_equal("line1\n".encode("utf-16le"), stringio.gets)
