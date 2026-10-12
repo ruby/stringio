@@ -1411,6 +1411,18 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
     s = RSTRING_PTR(ptr->string);
     e = s + RSTRING_LEN(ptr->string);
     s += ptr->pos;
+    if (!NIL_P(str) && RSTRING_LEN(str) == 0) {
+	/* paragraph mode: skip leading newlines before applying the limit */
+	p = s;
+	while (p[(p + 1 < e) && (*p == '\r') && 0] == '\n') {
+	    p += *p == '\r';
+	    if (++p == e) {
+		ptr->pos = e - RSTRING_PTR(ptr->string);
+		return Qnil;
+	    }
+	}
+	s = p;
+    }
     if (limit > 0 && (size_t)limit < (size_t)(e - s)) {
 	e = rb_enc_right_char_head(s, s + limit, e, get_enc(ptr));
     }
@@ -1423,13 +1435,6 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
     else if ((n = RSTRING_LEN(str)) == 0) {
 	const char *paragraph_end = NULL;
 	p = s;
-	while (p[(p + 1 < e) && (*p == '\r') && 0] == '\n') {
-	    p += *p == '\r';
-	    if (++p == e) {
-		return Qnil;
-	    }
-	}
-	s = p;
 	while ((p = memchr(p, '\n', e - p)) && (p != e)) {
 	    p++;
 	    if (!((p < e && *p == '\n') ||
