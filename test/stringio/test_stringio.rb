@@ -1206,6 +1206,70 @@ class TestStringIO < Test::Unit::TestCase
     assert_not_predicate(f2, :frozen?)
   end
 
+  def test_reopen_during_argument_conversion
+    ops = [
+      ->(f, c) {f.read(c)},
+      ->(f, c) {f.read(5, c)},
+      ->(f, c) {f.pread(5, c)},
+      ->(f, c) {f.pread(5, 0, c)},
+      ->(f, c) {f.pos = c},
+      ->(f, c) {f.seek(c)},
+      ->(f, c) {f.lineno = c},
+      ->(f, c) {f.truncate(c)},
+      ->(f, c) {f.write(c)},
+      ->(f, c) {f.putc(c)},
+      ->(f, c) {f.ungetc(c)},
+      ->(f, c) {f.ungetbyte(c)},
+      ->(f, c) {f.gets(c)},
+      ->(f, c) {f.gets(nil, c)},
+      ->(f, c) {f.readlines(c)},
+      ->(f, c) {f.each_line(c) {}},
+      ->(f, c) {f.string = c},
+      ->(f, c) {f.reopen("", c)},
+    ]
+    ops.each do |op|
+      f = StringIO.new("hello\n" * 10)
+      g = StringIO.new("world\n" * 10)
+      c = Object.new
+      c.define_singleton_method(:to_int) {f.reopen(g); 5}
+      c.define_singleton_method(:to_str) {f.reopen(g); "r".dup}
+      c.define_singleton_method(:to_s) {f.reopen(g); "r".dup}
+      op.call(f, c)
+      assert_same(g.string, f.string, op.source_location.join(":"))
+    end
+
+    f = StringIO.new("hello")
+    g = StringIO.new("world")
+    c = Object.new
+    c.define_singleton_method(:to_str) {f.reopen(g); "US-ASCII"}
+    f.set_encoding(c)
+    assert_equal(Encoding::US_ASCII, g.external_encoding)
+  end
+
+  def test_reopen_in_each_line_block
+    f = StringIO.new("a\nb\nc\n")
+    g = StringIO.new("x\ny\n")
+    lines = []
+    f.each_line {|l| lines << l; f.reopen(g)}
+    assert_equal(["a\n", "x\n", "y\n"], lines)
+  end
+
+  def test_reopen_during_argument_conversion_to_underlying_string
+    ops = [
+      ->(f, c, g) {f.read(c, g.string)},
+      ->(f, c, g) {f.read(5, c)},
+      ->(f, c, g) {f.pread(5, 0, c)},
+    ]
+    ops.each do |op|
+      f = StringIO.new("hello")
+      g = StringIO.new("world")
+      c = Object.new
+      c.define_singleton_method(:to_int) {f.reopen(g); 5}
+      c.define_singleton_method(:to_str) {f.reopen(g); g.string}
+      assert_raise(ArgumentError, op.source_location.join(":")) {op.call(f, c, g)}
+    end
+  end
+
   private
 
   def assert_string(content, encoding, str, mesg = nil)
