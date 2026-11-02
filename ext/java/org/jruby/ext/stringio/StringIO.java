@@ -895,6 +895,17 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             int p;
             int w = 0;
 
+            if (rs != context.nil && ((RubyString) rs).size() == 0) {
+                // paragraph mode: skip leading newlines before applying the limit
+                p = s;
+                while (stringBytes[p] == '\n') {
+                    if (++p == e) {
+                        ptr.pos = e - begin;
+                        return context.nil;
+                    }
+                }
+                s = p;
+            }
             if (limit > 0 && s + limit < e) {
                 e = getEncoding().rightAdjustCharHead(stringBytes, s, s + limit, e);
             }
@@ -906,12 +917,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             } else if ((n = ((RubyString) rs).size()) == 0) {
                 int paragraph_end = 0;
                 p = s;
-                while (stringBytes[p] == '\n') {
-                    if (++p == e) {
-                        return context.nil;
-                    }
-                }
-                s = p;
                 while ((p = Helpers.memchr(stringBytes, p, '\n', e - p)) != -1 && (p != e)) {
                     p++;
                     if (!((p < e && stringBytes[p] == '\n') ||

@@ -15,3 +15,5 @@
 *.so
 *.jar
 Makefile
+config.bat
+node_modules
