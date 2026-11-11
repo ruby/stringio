@@ -896,7 +896,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             int w = 0;
 
             if (limit > 0 && s + limit < e) {
-                e = getEncoding().rightAdjustCharHead(stringBytes, s, s + limit, e);
+                // a fixed-width encoding may step past a truncated last character
+                e = Math.min(e, getEncoding().rightAdjustCharHead(stringBytes, s, s + limit, e));
             }
             if (rs == context.nil) {
                 if (chomp) {
