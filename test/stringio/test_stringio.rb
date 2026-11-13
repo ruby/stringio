@@ -1300,9 +1300,20 @@ class TestStringIO < Test::Unit::TestCase
   end
 
   def test_new_during_mode_conversion
-    mode = Object.new
-    mode.define_singleton_method(:to_str) {StringIO.new("", "a"); "r"}
-    assert_predicate(StringIO.new("".dup, mode), :closed_write?)
+    inner = nil
+    c = Object.new
+    c.define_singleton_method(:to_str) {inner = StringIO.new("inner".dup, "a"); "r"}
+    outer = StringIO.new("outer".dup, c)
+    assert_equal(["outer", false, true, "inner", true, false],
+                 [outer.string, outer.closed_read?, outer.closed_write?,
+                  inner.string, inner.closed_read?, inner.closed_write?])
+
+    f = StringIO.new("hello".dup)
+    c = Object.new
+    c.define_singleton_method(:to_str) {f.set_encoding("UTF-16LE"); "r"}
+    f.reopen("outer".dup, c)
+    assert_equal(["outer", false, true],
+                 [f.string, f.closed_read?, f.closed_write?])
   end
 
   def test_reopen_freeze_during_argument_conversion
