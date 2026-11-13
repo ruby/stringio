@@ -1274,6 +1274,21 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal(["a\n", "x\n", "y\n"], lines)
   end
 
+  def test_reopen_freeze_during_argument_conversion
+    f = StringIO.new("hello")
+    c = Object.new
+    c.define_singleton_method(:to_str) {f.freeze; "new"}
+    assert_raise(FrozenError) {f.reopen(c, "r")}
+    assert_equal("hello", f.string)
+  end
+
+  def test_initialize_frozen
+    f = StringIO.new("hello")
+    f.freeze
+    assert_raise(FrozenError) {f.send(:initialize, "new")}
+    assert_equal("hello", f.string)
+  end
+
   def test_reopen_to_unwritable_during_write_conversion
     f = StringIO.new("hello".dup)
     g = StringIO.new("world".dup, "r")

@@ -408,7 +408,7 @@ strio_init(int argc, VALUE *argv, VALUE self)
     else if (!argc) {
 	string = rb_enc_str_new("", 0, rb_default_external_encoding());
     }
-    ptr = StringIOForRead(self);
+    ptr = StringIO(self);
     ptr->flags = fmode;
 
     if (!NIL_P(string) && readonly_string_p(string)) {
