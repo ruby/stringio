@@ -120,8 +120,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     private static final AtomicReferenceFieldUpdater<StringIOData, Object> LOCKED_UPDATER = AtomicReferenceFieldUpdater.newUpdater(StringIOData.class, Object.class, "owner");
 
-    private static final ThreadLocal<Object> VMODE_VPERM_TL = ThreadLocal.withInitial(() -> EncodingUtils.vmodeVperm(null, null));
-    private static final ThreadLocal<int[]> FMODE_TL = ThreadLocal.withInitial(() -> new int[]{0});
     private static final int[] OFLAGS_UNUSED = new int[]{0};
 
     public static RubyClass createStringIOClass(final Ruby runtime) {
@@ -365,18 +363,16 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             if (!maybeOptions.isNil()) {
                 argc--;
             }
-            Object vmodeAndVpermP = VMODE_VPERM_TL.get();
-            EncodingUtils.vmode(vmodeAndVpermP, vmode);
+            // Don't share these with other calls: the conversions in
+            // extractModeEncoding may call StringIO methods.
+            Object vmodeAndVpermP = EncodingUtils.vmodeVperm(vmode, null);
             IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
-            int[] fmode = FMODE_TL.get();
+            int[] fmode = {0};
 
             // switch to per-use oflags if it is ever used in the future
             EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, maybeOptions, OFLAGS_UNUSED, fmode);
             ptr.flags = fmode[0];
             vmode = EncodingUtils.vmode(vmodeAndVpermP);
-
-            // clear shared vmodeVperm
-            clearVmodeVperm(vmodeAndVpermP);
 
             if (!string.isNil()) {
                 string = string.convertToString();
@@ -1817,10 +1813,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             enc = context.runtime.getEncodingService().getEncodingFromObjectNoError(ext_enc);
             if (enc == null) {
                 IOEncodable convconfig = new IOEncodable.ConvConfig();
-                Object vmodeAndVpermP = VMODE_VPERM_TL.get();
-                EncodingUtils.vmode(vmodeAndVpermP, ext_enc.convertToString().prepend(context, context.runtime.newString("r:")));
-                EncodingUtils.extractModeEncoding(context, convconfig, vmodeAndVpermP, context.nil, OFLAGS_UNUSED, FMODE_TL.get());
-                clearVmodeVperm(vmodeAndVpermP);
+                IRubyObject vmode = ext_enc.convertToString().prepend(context, context.runtime.newString("r:"));
+                Object vmodeAndVpermP = EncodingUtils.vmodeVperm(vmode, null);
+                EncodingUtils.extractModeEncoding(context, convconfig, vmodeAndVpermP, context.nil, OFLAGS_UNUSED, new int[]{0});
                 enc = convconfig.getEnc2();
             }
         }
@@ -1842,11 +1837,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
 
         return this;
-    }
-
-    private static void clearVmodeVperm(Object vmodeAndVpermP) {
-        EncodingUtils.vmode(vmodeAndVpermP, null);
-        EncodingUtils.vperm(vmodeAndVpermP, null);
     }
 
     @JRubyMethod
