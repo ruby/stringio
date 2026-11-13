@@ -1369,14 +1369,25 @@ class TestStringIO < Test::Unit::TestCase
       ->(f, c) {f.reopen("", c)},
     ]
     ops.each do |op|
+      # Applies op to io.  io is reopened to target during the
+      # argument conversion if target is given.
+      run = ->(io, target) do
+        c = Object.new
+        c.define_singleton_method(:to_int) {io.reopen(target) if target; 5}
+        c.define_singleton_method(:to_str) {io.reopen(target) if target; "r".dup}
+        c.define_singleton_method(:to_s) {io.reopen(target) if target; "r".dup}
+        result = op.call(io, c)
+        result = nil if result.equal?(io) or result.equal?(c)
+        [result, io.pos, io.lineno, io.string]
+      end
+      message = op.source_location.join(":")
       f = StringIO.new("hello\n" * 10)
       g = StringIO.new("world\n" * 10)
-      c = Object.new
-      c.define_singleton_method(:to_int) {f.reopen(g); 5}
-      c.define_singleton_method(:to_str) {f.reopen(g); "r".dup}
-      c.define_singleton_method(:to_s) {f.reopen(g); "r".dup}
-      op.call(f, c)
-      assert_same(g.string, f.string, op.source_location.join(":"))
+      actual = run.call(f, g)
+      assert_same(g.string, f.string, message)
+      # The operation must be applied to the reopened stream.
+      expected = run.call(StringIO.new("world\n" * 10), nil)
+      assert_equal(expected, actual, message)
     end
 
     f = StringIO.new("hello")
@@ -1467,6 +1478,28 @@ class TestStringIO < Test::Unit::TestCase
     PREPARE
       [stream.set_encoding_by_bom, stream.pos, stream.string.encoding]
     OPERATE
+  end
+
+  def test_reopen_during_integer_and_in_ungetbyte
+    assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+      f = StringIO.new("hello".dup)
+      g = StringIO.new("world".dup)
+      stream = f
+      Integer.class_eval do
+        alias_method :and_without_reopen, :&
+        define_method(:&) do |other|
+          if f
+            reopening, f = f, nil
+            reopening.reopen(g)
+            GC.start
+          end
+          and_without_reopen(other)
+        end
+      end
+      stream.ungetbyte(0x41)
+      assert_equal("A", stream.read(1))
+    end;
   end
 
   def test_reopen_to_unwritable_during_write_conversion
