@@ -1427,9 +1427,8 @@ strio_each_codepoint(VALUE self)
 
     RETURN_ENUMERATOR(self, 0, 0);
 
-    ptr = readable(self);
-    enc = get_enc(ptr);
     while ((ptr = strio_to_read(self)) != NULL) {
+	enc = get_enc(ptr);
 	c = rb_enc_codepoint_len(RSTRING_PTR(ptr->string)+ptr->pos,
 				 RSTRING_END(ptr->string), &n, enc);
 	ptr->pos += n;

@@ -1299,6 +1299,22 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal("axy".codepoints, codepoints)
   end
 
+  def test_reopen_to_other_encoding_in_each_codepoint_block
+    f = StringIO.new("ab")
+    g = StringIO.new("xy".encode("UTF-16LE"))
+    codepoints = []
+    f.each_codepoint {|c| codepoints << c; f.reopen(g)}
+    assert_equal("axy".codepoints, codepoints)
+  end
+
+  def test_each_codepoint_truncated_char_in_shared_string
+    s = "aあzz"
+    f = StringIO.new(s.byteslice(0, 3))
+    codepoints = []
+    assert_raise(ArgumentError) {f.each_codepoint {|c| codepoints << c}}
+    assert_equal([0x61], codepoints)
+  end
+
   def test_reopen_to_unreadable_in_each_line_block
     f = StringIO.new("a\nb\n")
     g = StringIO.new("x\ny\n")
