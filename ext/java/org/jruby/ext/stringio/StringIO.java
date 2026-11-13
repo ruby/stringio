@@ -1766,6 +1766,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 str = converted;
                 encStr = str.getEncoding();
             }
+            if (ptr.string == null) return 0;
             final ByteList strByteList = str.getByteList();
             len = str.size();
             if (len == 0) return 0;
@@ -1921,6 +1922,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         int p;
         int len;
 
+        if (str == null) return null;
         ByteList byteList = str.getByteList();
         byte[] bytes = byteList.unsafeBytes();
         p = byteList.begin();

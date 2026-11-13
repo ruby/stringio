@@ -330,6 +330,7 @@ detect_bom(VALUE str, int *bomlen)
     const char *p;
     rb_len_t len;
 
+    if (NIL_P(str)) return 0;
     RSTRING_GETMEM(str, p, len);
     if (len < 1) return 0;
     switch ((unsigned char)p[0]) {
@@ -374,11 +375,21 @@ detect_bom(VALUE str, int *bomlen)
     return 0;
 }
 
-static rb_encoding *
-set_encoding_by_bom(struct StringIO *ptr)
+static struct StringIO *
+set_encoding_by_bom(VALUE self)
 {
-    int bomlen, idx = detect_bom(ptr->string, &bomlen);
+    struct StringIO *ptr;
+    VALUE string;
+    int bomlen, idx;
     rb_encoding *extenc = NULL;
+
+    /* Finding an encoding may load it, and that may call back into
+     * Ruby code.  Detect again if the underlying string is changed. */
+    do {
+	string = StringIO(self)->string;
+	idx = detect_bom(string, &bomlen);
+	ptr = StringIO(self);
+    } while (ptr->string != string);
 
     if (idx) {
 	extenc = rb_enc_from_index(idx);
@@ -388,7 +399,7 @@ set_encoding_by_bom(struct StringIO *ptr)
 	}
     }
     ptr->enc = extenc;
-    return extenc;
+    return ptr;
 }
 
 static VALUE
@@ -433,7 +444,7 @@ strio_init(int argc, VALUE *argv, VALUE self)
     }
     ptr->pos = 0;
     ptr->lineno = 0;
-    if (ptr->flags & FMODE_SETENC_BY_BOM) set_encoding_by_bom(ptr);
+    if (ptr->flags & FMODE_SETENC_BY_BOM) ptr = set_encoding_by_bom(self);
     RB_FL_SET_RAW(self, (ptr->flags & FMODE_READWRITE) * (STRIO_READABLE / FMODE_READABLE));
     return self;
 }
@@ -1228,6 +1239,10 @@ strio_ungetc(VALUE self, VALUE c)
 	enc2 = rb_enc_get(c);
 	if (enc != enc2 && enc != rb_ascii8bit_encoding()) {
 	    c = rb_str_conv_enc(c, enc2, enc);
+	    /* Loading a transcoder may call back into Ruby code. */
+	    ptr = readable(self);
+	    check_modifiable(ptr);
+	    if (NIL_P(ptr->string)) return Qnil;
 	}
 	strio_unget_string(ptr, c);
 	return Qnil;
@@ -2071,7 +2086,10 @@ strio_write(VALUE self, VALUE str)
 	    rb_enc_check(rb_enc_from_encoding(enc), str);
 	}
 	str = converted;
+	/* Loading a transcoder may call back into Ruby code. */
+	ptr = writable(self);
     }
+    if (NIL_P(ptr->string)) return 0;
     len = RSTRING_LEN(str);
     if (len == 0) return 0;
     check_modifiable(ptr);
@@ -2718,9 +2736,9 @@ strio_set_encoding(int argc, VALUE *argv, VALUE self)
 static VALUE
 strio_set_encoding_by_bom(VALUE self)
 {
-    struct StringIO *ptr = StringIO(self);
+    struct StringIO *ptr = set_encoding_by_bom(self);
 
-    if (!set_encoding_by_bom(ptr)) return Qnil;
+    if (!ptr->enc) return Qnil;
     return rb_enc_from_encoding(ptr->enc);
 }
 
