@@ -598,10 +598,9 @@ strio_get_string(VALUE self)
 static VALUE
 strio_set_string(VALUE self, VALUE string)
 {
-    struct StringIO *ptr = StringIO(self);
+    struct StringIO *ptr;
 
     rb_io_taint_check(self);
-    ptr->flags &= ~FMODE_READWRITE;
     StringValue(string);
     ptr = StringIO(self);
     ptr->flags = readonly_string_p(string) ? FMODE_READABLE : FMODE_READWRITE;

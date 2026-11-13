@@ -1413,7 +1413,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         boolean locked = lock(context, ptr);
         try {
-            ptr.flags &= ~OpenFile.READWRITE;
             RubyString str = arg.convertToString();
             ptr.flags = str.isFrozen() ? OpenFile.READABLE : OpenFile.READWRITE;
             ptr.pos = 0;

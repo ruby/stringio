@@ -1246,6 +1246,16 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal(Encoding::US_ASCII, g.external_encoding)
   end
 
+  def test_set_string_reopen_during_conversion_keeps_shared_stream
+    f = StringIO.new("hello")
+    shared = f.dup
+    g = StringIO.new("world")
+    c = Object.new
+    c.define_singleton_method(:to_str) {f.reopen(g); "new".dup}
+    f.string = c
+    assert_equal(["new", "hello"], [g.string, shared.read])
+  end
+
   def test_reopen_in_each_line_block
     f = StringIO.new("a\nb\nc\n")
     g = StringIO.new("x\ny\n")
