@@ -336,53 +336,58 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         StringIOData ptr = this.getPtrForWrite();
 
+        IRubyObject maybeOptions = context.nil;
+        switch (argc) {
+            case 1:
+                maybeOptions = ArgsUtil.getOptionsArg(runtime, arg0);
+                if (maybeOptions.isNil()) {
+                    string = arg0;
+                }
+                break;
+            case 2:
+                string = arg0;
+                maybeOptions = ArgsUtil.getOptionsArg(runtime, arg1);
+                if (maybeOptions.isNil()) {
+                    vmode = arg1;
+                }
+                break;
+            case 3:
+                string = arg0;
+                vmode = arg1;
+                maybeOptions = ArgsUtil.getOptionsArg(runtime, arg2);
+                if (maybeOptions.isNil()) {
+                    throw context.runtime.newArgumentError(argc, 0, 2);
+                }
+                break;
+        }
+        if (!maybeOptions.isNil()) {
+            argc--;
+        }
+        Object vmodeAndVpermP = VMODE_VPERM_TL.get();
+        EncodingUtils.vmode(vmodeAndVpermP, vmode);
+        IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
+        int[] fmodeP = FMODE_TL.get();
+
+        // switch to per-use oflags if it is ever used in the future
+        EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, maybeOptions, OFLAGS_UNUSED, fmodeP);
+        int fmode = fmodeP[0];
+        vmode = EncodingUtils.vmode(vmodeAndVpermP);
+
+        // clear shared vmodeVperm
+        clearVmodeVperm(vmodeAndVpermP);
+
+        if (!string.isNil()) {
+            string = string.convertToString();
+        } else if (argc == 0) {
+            string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
+        }
+
+        // The conversions above may reopen this stream.
+        ptr = this.getPtrForWrite();
+
         boolean locked = lock(context, ptr);
         try {
-            IRubyObject maybeOptions = context.nil;
-            switch (argc) {
-                case 1:
-                    maybeOptions = ArgsUtil.getOptionsArg(runtime, arg0);
-                    if (maybeOptions.isNil()) {
-                        string = arg0;
-                    }
-                    break;
-                case 2:
-                    string = arg0;
-                    maybeOptions = ArgsUtil.getOptionsArg(runtime, arg1);
-                    if (maybeOptions.isNil()) {
-                        vmode = arg1;
-                    }
-                    break;
-                case 3:
-                    string = arg0;
-                    vmode = arg1;
-                    maybeOptions = ArgsUtil.getOptionsArg(runtime, arg2);
-                    if (maybeOptions.isNil()) {
-                        throw context.runtime.newArgumentError(argc, 0, 2);
-                    }
-                    break;
-            }
-            if (!maybeOptions.isNil()) {
-                argc--;
-            }
-            Object vmodeAndVpermP = VMODE_VPERM_TL.get();
-            EncodingUtils.vmode(vmodeAndVpermP, vmode);
-            IOEncodable.ConvConfig ioEncodable = new IOEncodable.ConvConfig();
-            int[] fmode = FMODE_TL.get();
-
-            // switch to per-use oflags if it is ever used in the future
-            EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, maybeOptions, OFLAGS_UNUSED, fmode);
-            ptr.flags = fmode[0];
-            vmode = EncodingUtils.vmode(vmodeAndVpermP);
-
-            // clear shared vmodeVperm
-            clearVmodeVperm(vmodeAndVpermP);
-
-            if (!string.isNil()) {
-                string = string.convertToString();
-            } else if (argc == 0) {
-                string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
-            }
+            ptr.flags = fmode;
 
             if (!string.isNil() && string.isFrozen()) {
                 if ((ptr.flags & OpenFile.WRITABLE) != 0) {
@@ -998,7 +1003,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = "lineno=", required = 1)
     public IRubyObject set_lineno(ThreadContext context, IRubyObject arg) {
-        getPtrForWrite().lineno = RubyNumeric.fix2int(arg);
+        int lineno = RubyNumeric.num2int(arg);
+        getPtrForWrite().lineno = lineno;
 
         return context.nil;
     }
@@ -1014,7 +1020,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject set_pos(IRubyObject arg) {
         checkInitialized();
 
-        long p = RubyNumeric.fix2long(arg);
+        long p = RubyNumeric.num2long(arg);
 
         if (p < 0) throw getRuntime().newErrnoEINVALError(arg.toString());
 
@@ -1103,19 +1109,26 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         IRubyObject str = context.nil;
         boolean binary = false;
         StringIOData ptr = this.getPtrForWrite();
+        int len = 0;
+
+        // Convert the arguments before fetching the data, as the
+        // conversions may reopen this stream.
+        if (argc == 2) str = readBuf(context, arg1);
+        if (argc >= 1 && !arg0.isNil()) {
+            len = RubyNumeric.num2int(arg0);
+            str = readBuf(context, str);
+        }
+        checkReadable();
+        ptr = this.getPtrForWrite();
         int pos = ptr.pos;
 
         boolean locked = lock(context, ptr);
         try {
-            int len;
             final RubyString string;
             switch (argc) {
                 case 2:
-                    str = readBuf(context, ptr, arg1);
                 case 1:
                     if (!arg0.isNil()) {
-                        len = RubyNumeric.fix2int(arg0);
-
                         if (len < 0) {
                             throw runtime.newArgumentError("negative length " + len + " given");
                         }
@@ -1203,16 +1216,16 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         switch (argc) {
             case 3:
-                str = readBuf(context, ptr, arg2);
+                str = readBuf(context, arg2);
             case 2:
-                len = RubyNumeric.fix2int(arg0);
+                len = RubyNumeric.num2int(arg0);
                 if (!arg0.isNil()) {
                     if (len < 0) {
                         throw runtime.newArgumentError("negative length " + len + " given");
                     }
                 }
 
-                offset = RubyNumeric.fix2int(arg1);
+                offset = RubyNumeric.num2int(arg1);
                 if (offset < 0) {
                     throw runtime.newErrnoEINVALError("pread: Invalid offset argument");
                 }
@@ -1221,6 +1234,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             default:
                 throw runtime.newArgumentError(argc, 0, 2);
         }
+
+        // The conversions above may reopen this stream.
+        str = readBuf(context, str);
+        checkReadable();
+        ptr = this.getPtrForRead();
 
         boolean locked = lock(context, ptr);
         try {
@@ -1378,9 +1396,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkOpen();
 
+        int w = whence.isNil() ? 0 : RubyNumeric.num2int(whence);
+        // The conversion above may reopen this stream.
+        ptr = this.getPtrForWrite();
+        checkOpen();
+
         boolean locked = lock(context, ptr);
         try {
-            switch (whence.isNil() ? 0 : RubyNumeric.num2int(whence)) {
+            switch (w) {
                 case 0:
                     break;
                 case 1:
@@ -1409,11 +1432,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = "string=", required = 1)
     public IRubyObject set_string(ThreadContext context, IRubyObject arg) {
+        checkFrozen();
+
+        RubyString str = arg.convertToString();
+        // The conversion above may reopen this stream.
         StringIOData ptr = this.getPtrForWrite();
 
         boolean locked = lock(context, ptr);
         try {
-            RubyString str = arg.convertToString();
             ptr.flags = str.isFrozen() ? OpenFile.READABLE : OpenFile.READWRITE;
             ptr.pos = 0;
             ptr.lineno = 0;
@@ -1441,7 +1467,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject truncate(ThreadContext context, IRubyObject len) {
         checkWritable();
 
-        int l = RubyFixnum.fix2int(len);
+        int l = RubyNumeric.num2int(len);
+        checkWritable();
         StringIOData ptr = this.getPtrForWrite();
         RubyString string = ptr.string;
 
@@ -1488,6 +1515,10 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             ungetbyteCommon(context, buf, 0, len);
         } else {
             arg = arg.convertToString();
+            // The conversion above may reopen this stream.
+            checkModifiable();
+            checkReadable();
+            if (getPtrForWrite().string == null) return context.nil;
             enc = getEncoding();
             RubyString argStr = (RubyString) arg;
             enc2 = argStr.getEncoding();
@@ -1592,7 +1623,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (arg instanceof RubyInteger) {
             ungetbyteCommon(context, ((RubyInteger) ((RubyInteger) arg).op_mod(context, 256)).getIntValue());
         } else {
-            ungetbyteCommon(context, arg.convertToString());
+            RubyString str = arg.convertToString();
+            // The conversion above may reopen this stream.
+            checkReadable();
+            checkModifiable();
+            if (getPtrForWrite().string == null) return context.nil;
+            ungetbyteCommon(context, str);
         }
 
         return context.nil;
@@ -1694,12 +1730,12 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         return str;
     }
 
-    private static IRubyObject readBuf(ThreadContext context, StringIOData ptr, IRubyObject arg) {
+    private IRubyObject readBuf(ThreadContext context, IRubyObject arg) {
         if (!arg.isNil()) {
             arg = arg.convertToString();
             RubyString str = (RubyString) arg;
             modifyString(str);
-            if (str == ptr.string) {
+            if (str == getPtrForRead().string) {
                 throw context.runtime.newArgumentError("cannot read into the underlying string");
             }
         }
