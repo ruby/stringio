@@ -1429,8 +1429,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         StringIOData ptr = this.getPtrForWrite();
 
-        checkOpen();
-
         int w = whence.isNil() ? 0 : RubyNumeric.num2int(whence);
         // The conversion above may reopen this stream.
         ptr = this.getPtrForWrite();
