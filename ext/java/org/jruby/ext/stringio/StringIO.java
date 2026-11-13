@@ -1800,6 +1800,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 str = converted;
                 encStr = str.getEncoding();
             }
+            if (ptr.string == null) return 0;
             final ByteList strByteList = str.getByteList();
             len = str.size();
             if (len == 0) return 0;

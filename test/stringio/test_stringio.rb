@@ -1415,6 +1415,60 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal(["a\n", "x\n", "y\n"], lines)
   end
 
+  # Loading a transcoder or an encoding calls #to_path of objects in
+  # $LOAD_PATH.  This must run in a separate process because it's
+  # called only when they aren't loaded yet.
+  def assert_reopen_during_load(prepare, operate)
+    assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+      f, g = #{prepare}
+      path = Object.new
+      path.define_singleton_method(:to_path) do
+        if f
+          f.reopen(g)
+          f = nil
+          GC.start
+        end
+        "/nonexistent"
+      end
+      $LOAD_PATH.unshift(path)
+      begin
+        stream = f
+        actual = #{operate}
+      ensure
+        $LOAD_PATH.delete(path)
+      end
+      f, = #{prepare}
+      stream = f
+      expected = #{operate}
+      assert_equal(expected, actual)
+    end;
+  end
+
+  def test_reopen_during_transcoder_load_in_write
+    assert_reopen_during_load(<<-'PREPARE', <<-'OPERATE')
+      2.times.map {StringIO.new("".encode("EUC-JP"))}
+    PREPARE
+      [stream.write("\u3042"), stream.string]
+    OPERATE
+  end
+
+  def test_reopen_during_transcoder_load_in_ungetc
+    assert_reopen_during_load(<<-'PREPARE', <<-'OPERATE')
+      2.times.map {StringIO.new("abc".encode("EUC-JP"))}
+    PREPARE
+      [stream.ungetc("\u3042"), stream.string]
+    OPERATE
+  end
+
+  def test_reopen_during_encoding_load_in_set_encoding_by_bom
+    assert_reopen_during_load(<<-'PREPARE', <<-'OPERATE')
+      2.times.map {StringIO.new("\xFE\xFFab".b)}
+    PREPARE
+      [stream.set_encoding_by_bom, stream.pos, stream.string.encoding]
+    OPERATE
+  end
+
   def test_reopen_to_unwritable_during_write_conversion
     f = StringIO.new("hello".dup)
     g = StringIO.new("world".dup, "r")
@@ -1449,7 +1503,7 @@ class TestStringIO < Test::Unit::TestCase
   end
 
   def test_each_codepoint_truncated_char_in_shared_string
-    s = "aあzz"
+    s = "a\u3042zz"
     f = StringIO.new(s.byteslice(0, 3))
     codepoints = []
     assert_raise(ArgumentError) {f.each_codepoint {|c| codepoints << c}}
