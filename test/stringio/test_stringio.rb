@@ -1372,6 +1372,21 @@ class TestStringIO < Test::Unit::TestCase
     assert_nil(StringIO.new(nil, "r:BOM|UTF-8").string)
   end
 
+  def test_reopen_to_other_encoding_during_separator_conversion
+    ops = [
+      ->(f, c) {f.gets(c)},
+      ->(f, c) {f.readlines(c)},
+      ->(f, c) {f.each_line(c) {}},
+    ]
+    ops.each do |op|
+      f = StringIO.new("a\nb\n")
+      g = StringIO.new("x\ny\n".encode("UTF-16LE"))
+      c = Object.new
+      c.define_singleton_method(:to_str) {f.reopen(g); "\n"}
+      assert_raise(ArgumentError, op.source_location.join(":")) {op.call(f, c)}
+    end
+  end
+
   def test_new_during_mode_conversion
     inner = nil
     c = Object.new
