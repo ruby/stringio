@@ -92,7 +92,7 @@ struct StringIO {
 };
 
 static struct StringIO *get_strio_for_read(VALUE self);
-static VALUE strio_init(int, VALUE *, struct StringIO *, VALUE);
+static VALUE strio_init(int, VALUE *, VALUE);
 static VALUE strio_unget_bytes(struct StringIO *, const char *, rb_len_t);
 static rb_len_t strio_write(VALUE self, VALUE str);
 
@@ -191,12 +191,12 @@ strio_substr(struct StringIO *ptr, rb_len_t pos, rb_len_t len, rb_encoding *enc)
 }
 
 static VALUE
-strio_readbuf(struct StringIO *ptr, VALUE str)
+strio_readbuf(VALUE self, VALUE str)
 {
     if (!NIL_P(str)) {
 	StringValue(str);
 	rb_str_modify(str);
-	if (str == ptr->string) {
+	if (str == get_strio_for_read(self)->string) {
 	    rb_raise(rb_eArgError, "cannot read into the underlying string");
 	}
     }
@@ -321,7 +321,7 @@ strio_initialize(int argc, VALUE *argv, VALUE self)
 	DATA_PTR(self) = ptr = strio_alloc();
     }
     rb_call_super(0, 0);
-    return strio_init(argc, argv, ptr, self);
+    return strio_init(argc, argv, self);
 }
 
 static int
@@ -330,6 +330,7 @@ detect_bom(VALUE str, int *bomlen)
     const char *p;
     rb_len_t len;
 
+    if (NIL_P(str)) return 0;
     RSTRING_GETMEM(str, p, len);
     if (len < 1) return 0;
     switch ((unsigned char)p[0]) {
@@ -374,11 +375,21 @@ detect_bom(VALUE str, int *bomlen)
     return 0;
 }
 
-static rb_encoding *
-set_encoding_by_bom(struct StringIO *ptr)
+static struct StringIO *
+set_encoding_by_bom(VALUE self)
 {
-    int bomlen, idx = detect_bom(ptr->string, &bomlen);
+    struct StringIO *ptr;
+    VALUE string;
+    int bomlen, idx;
     rb_encoding *extenc = NULL;
+
+    /* Finding an encoding may load it, and that may call back into
+     * Ruby code.  Detect again if the underlying string is changed. */
+    do {
+	string = StringIO(self)->string;
+	idx = detect_bom(string, &bomlen);
+	ptr = StringIO(self);
+    } while (ptr->string != string);
 
     if (idx) {
 	extenc = rb_enc_from_index(idx);
@@ -388,24 +399,28 @@ set_encoding_by_bom(struct StringIO *ptr)
 	}
     }
     ptr->enc = extenc;
-    return extenc;
+    return ptr;
 }
 
 static VALUE
-strio_init(int argc, VALUE *argv, struct StringIO *ptr, VALUE self)
+strio_init(int argc, VALUE *argv, VALUE self)
 {
+    struct StringIO *ptr;
     VALUE string, vmode, opt;
     int oflags;
+    rb_io_mode_t fmode;
     rb_io_enc_t convconfig;
 
     argc = rb_scan_args(argc, argv, "02:", &string, &vmode, &opt);
-    rb_io_extract_modeenc(&vmode, 0, opt, &oflags, &ptr->flags, &convconfig);
+    rb_io_extract_modeenc(&vmode, 0, opt, &oflags, &fmode, &convconfig);
     if (!NIL_P(string)) {
 	StringValue(string);
     }
     else if (!argc) {
 	string = rb_enc_str_new("", 0, rb_default_external_encoding());
     }
+    ptr = StringIO(self);
+    ptr->flags = fmode;
 
     if (!NIL_P(string) && readonly_string_p(string)) {
 	if (ptr->flags & FMODE_WRITABLE) {
@@ -429,7 +444,7 @@ strio_init(int argc, VALUE *argv, struct StringIO *ptr, VALUE self)
     }
     ptr->pos = 0;
     ptr->lineno = 0;
-    if (ptr->flags & FMODE_SETENC_BY_BOM) set_encoding_by_bom(ptr);
+    if (ptr->flags & FMODE_SETENC_BY_BOM) ptr = set_encoding_by_bom(self);
     RB_FL_SET_RAW(self, (ptr->flags & FMODE_READWRITE) * (STRIO_READABLE / FMODE_READABLE));
     return self;
 }
@@ -594,11 +609,11 @@ strio_get_string(VALUE self)
 static VALUE
 strio_set_string(VALUE self, VALUE string)
 {
-    struct StringIO *ptr = StringIO(self);
+    struct StringIO *ptr;
 
     rb_io_taint_check(self);
-    ptr->flags &= ~FMODE_READWRITE;
     StringValue(string);
+    ptr = StringIO(self);
     ptr->flags = readonly_string_p(string) ? FMODE_READABLE : FMODE_READWRITE;
     ptr->pos = 0;
     ptr->lineno = 0;
@@ -826,7 +841,8 @@ strio_get_lineno(VALUE self)
 static VALUE
 strio_set_lineno(VALUE self, VALUE lineno)
 {
-    StringIO(self)->lineno = NUM2LEN(lineno);
+    rb_len_t n = NUM2LEN(lineno);
+    StringIO(self)->lineno = n;
     return lineno;
 }
 
@@ -888,7 +904,7 @@ strio_reopen(int argc, VALUE *argv, VALUE self)
     if (argc == 1 && !RB_TYPE_P(*argv, T_STRING)) {
 	return strio_copy(self, *argv);
     }
-    return strio_init(argc, argv, StringIO(self), self);
+    return strio_init(argc, argv, self);
 }
 
 /*
@@ -916,6 +932,7 @@ strio_set_pos(VALUE self, VALUE pos)
 {
     struct StringIO *ptr = StringIO(self);
     rb_len_t p = NUM2LEN(pos);
+    ptr = StringIO(self);
     if (p < 0) {
 	error_inval(0);
     }
@@ -954,13 +971,16 @@ strio_seek(int argc, VALUE *argv, VALUE self)
     VALUE whence;
     struct StringIO *ptr = StringIO(self);
     rb_len_t amount, offset;
+    long w;
 
     rb_scan_args(argc, argv, "11", NULL, &whence);
     amount = NUM2LEN(argv[0]);
+    w = NIL_P(whence) ? 0 : NUM2LONG(whence);
+    ptr = StringIO(self);
     if (CLOSED(self)) {
 	rb_raise(rb_eIOError, "closed stream");
     }
-    switch (NIL_P(whence) ? 0 : NUM2LONG(whence)) {
+    switch (w) {
       case 0:
 	offset = 0;
 	break;
@@ -1211,11 +1231,18 @@ strio_ungetc(VALUE self, VALUE c)
     }
     else {
 	StringValue(c);
+	ptr = readable(self);
+	check_modifiable(ptr);
+	if (NIL_P(ptr->string)) return Qnil;
 	if (RSTRING_LEN(c) == 0) return Qnil;
 	enc = rb_enc_get(ptr->string);
 	enc2 = rb_enc_get(c);
 	if (enc != enc2 && enc != rb_ascii8bit_encoding()) {
 	    c = rb_str_conv_enc(c, enc2, enc);
+	    /* Loading a transcoder may call back into Ruby code. */
+	    ptr = readable(self);
+	    check_modifiable(ptr);
+	    if (NIL_P(ptr->string)) return Qnil;
 	}
 	strio_unget_string(ptr, c);
 	return Qnil;
@@ -1241,12 +1268,15 @@ strio_ungetbyte(VALUE self, VALUE c)
 	/* rb_int_and() not visible from exts */
 	VALUE v = rb_funcall(c, '&', 1, INT2FIX(0xff));
 	const char cc = NUM2INT(v) & 0xFF;
-	strio_unget_bytes(ptr, &cc, 1);
+	c = rb_str_new(&cc, 1);
     }
     else {
 	StringValue(c);
-	strio_unget_string(ptr, c);
     }
+    ptr = readable(self);
+    check_modifiable(ptr);
+    if (NIL_P(ptr->string)) return Qnil;
+    strio_unget_string(ptr, c);
     return Qnil;
 }
 
@@ -1412,9 +1442,8 @@ strio_each_codepoint(VALUE self)
 
     RETURN_ENUMERATOR(self, 0, 0);
 
-    ptr = readable(self);
-    enc = get_enc(ptr);
     while ((ptr = strio_to_read(self)) != NULL) {
+	enc = get_enc(ptr);
 	c = rb_enc_codepoint_len(RSTRING_PTR(ptr->string)+ptr->pos,
 				 RSTRING_END(ptr->string), &n, enc);
 	ptr->pos += n;
@@ -1463,8 +1492,9 @@ struct getline_arg {
 };
 
 static struct getline_arg *
-prepare_getline_args(struct StringIO *ptr, struct getline_arg *arg, int argc, VALUE *argv)
+prepare_getline_args(VALUE self, struct StringIO **ptrp, struct getline_arg *arg, int argc, VALUE *argv)
 {
+    struct StringIO *ptr;
     VALUE rs, lim, opts;
     rb_len_t limit = -1;
     int respect_chomp;
@@ -1494,6 +1524,7 @@ prepare_getline_args(struct StringIO *ptr, struct getline_arg *arg, int argc, VA
 	if (!NIL_P(lim)) limit = NUM2LEN(lim);
 	break;
     }
+    *ptrp = ptr = readable(self);
     if (!NIL_P(ptr->string) && !NIL_P(rs)) {
 	rb_encoding *enc_rs, *enc_io;
 	enc_rs = rb_enc_get(rs);
@@ -1738,11 +1769,11 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 static VALUE
 strio_gets(int argc, VALUE *argv, VALUE self)
 {
-    struct StringIO *ptr = readable(self);
+    struct StringIO *ptr;
     struct getline_arg arg;
     VALUE str;
 
-    if (prepare_getline_args(ptr, &arg, argc, argv)->limit == 0) {
+    if (prepare_getline_args(self, &ptr, &arg, argc, argv)->limit == 0) {
 	if (NIL_P(ptr->string)) return Qnil;
 	return rb_enc_str_new(0, 0, get_enc(ptr));
     }
@@ -1972,16 +2003,16 @@ static VALUE
 strio_each(int argc, VALUE *argv, VALUE self)
 {
     VALUE line;
-    struct StringIO *ptr = readable(self);
+    struct StringIO *ptr;
     struct getline_arg arg;
 
     RETURN_ENUMERATOR(self, argc, argv);
 
-    if (prepare_getline_args(ptr, &arg, argc, argv)->limit == 0) {
+    if (prepare_getline_args(self, &ptr, &arg, argc, argv)->limit == 0) {
 	rb_raise(rb_eArgError, "invalid limit: 0 for each_line");
     }
 
-    while (!NIL_P(line = strio_getline(&arg, ptr))) {
+    while (!NIL_P(line = strio_getline(&arg, readable(self)))) {
 	rb_yield(line);
     }
     return self;
@@ -1999,10 +2030,10 @@ static VALUE
 strio_readlines(int argc, VALUE *argv, VALUE self)
 {
     VALUE ary, line;
-    struct StringIO *ptr = readable(self);
+    struct StringIO *ptr;
     struct getline_arg arg;
 
-    if (prepare_getline_args(ptr, &arg, argc, argv)->limit == 0) {
+    if (prepare_getline_args(self, &ptr, &arg, argc, argv)->limit == 0) {
 	rb_raise(rb_eArgError, "invalid limit: 0 for readlines");
     }
 
@@ -2045,6 +2076,7 @@ strio_write(VALUE self, VALUE str)
 
     if (!RB_TYPE_P(str, T_STRING))
 	str = rb_obj_as_string(str);
+    ptr = writable(self);
     enc = get_enc(ptr);
     if (!enc) return 0;
     enc2 = rb_enc_get(str);
@@ -2054,7 +2086,10 @@ strio_write(VALUE self, VALUE str)
 	    rb_enc_check(rb_enc_from_encoding(enc), str);
 	}
 	str = converted;
+	/* Loading a transcoder may call back into Ruby code. */
+	ptr = writable(self);
     }
+    if (NIL_P(ptr->string)) return 0;
     len = RSTRING_LEN(str);
     if (len == 0) return 0;
     check_modifiable(ptr);
@@ -2206,6 +2241,7 @@ strio_putc(VALUE self, VALUE ch)
     }
     else {
 	char c = NUM2CHR(ch);
+	ptr = writable(self);
 	if (NIL_P(ptr->string)) return ch;
 	str = rb_str_new(&c, 1);
     }
@@ -2320,7 +2356,7 @@ strio_read(int argc, VALUE *argv, VALUE self)
 
     switch (argc) {
       case 2:
-	str = strio_readbuf(ptr, argv[1]);
+	str = strio_readbuf(self, argv[1]);
 	/* fall through */
       case 1:
 	if (!NIL_P(argv[0])) {
@@ -2328,6 +2364,8 @@ strio_read(int argc, VALUE *argv, VALUE self)
 	    if (len < 0) {
 		rb_raise(rb_eArgError, "negative length %"PRIdLEN" given", len);
 	    }
+	    ptr = readable(self);
+	    str = strio_readbuf(self, str);
 	    if (eos_p(ptr)) {
 		if (!NIL_P(str)) rb_str_resize(str, 0);
 		return len > 0 ? Qnil : rb_str_new(0, 0);
@@ -2337,6 +2375,7 @@ strio_read(int argc, VALUE *argv, VALUE self)
 	}
 	/* fall through */
       case 0:
+	ptr = readable(self);
 	if (NIL_P(ptr->string)) return Qnil;
 	len = RSTRING_LEN(ptr->string);
 	if (len <= ptr->pos) {
@@ -2462,7 +2501,8 @@ strio_pread(int argc, VALUE *argv, VALUE self)
 	rb_syserr_fail_str(EINVAL, rb_sprintf("pread: Invalid offset argument: %" PRIsVALUE, rb_offset));
     }
 
-    rb_buf = strio_readbuf(ptr, rb_buf);
+    rb_buf = strio_readbuf(self, rb_buf);
+    ptr = readable(self);
 
     if (len == 0) {
 	if (NIL_P(rb_buf)) {
@@ -2592,6 +2632,7 @@ strio_truncate(VALUE self, VALUE len)
     VALUE string = writable(self)->string;
     rb_len_t l = NUM2LEN(len);
     rb_len_t plen;
+    string = writable(self)->string;
     if (l < 0) {
 	error_inval("negative length");
     }
@@ -2674,6 +2715,7 @@ strio_set_encoding(int argc, VALUE *argv, VALUE self)
 	    enc = convconfig.enc2;
 	}
     }
+    ptr = StringIO(self);
     ptr->enc = enc;
     if (!NIL_P(ptr->string) && WRITABLE(self) && !str_chilled_p(ptr->string)) {
 	rb_enc_associate(ptr->string, enc);
@@ -2694,9 +2736,9 @@ strio_set_encoding(int argc, VALUE *argv, VALUE self)
 static VALUE
 strio_set_encoding_by_bom(VALUE self)
 {
-    struct StringIO *ptr = StringIO(self);
+    struct StringIO *ptr = set_encoding_by_bom(self);
 
-    if (!set_encoding_by_bom(ptr)) return Qnil;
+    if (!ptr->enc) return Qnil;
     return rb_enc_from_encoding(ptr->enc);
 }
 
