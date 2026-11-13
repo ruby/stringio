@@ -416,7 +416,7 @@ strio_init(int argc, VALUE *argv, VALUE self)
     }
     /* The conversions above may freeze this stream. */
     rb_check_frozen(self);
-    ptr = StringIOForRead(self);
+    ptr = StringIO(self);
     ptr->flags = fmode;
 
     if (!NIL_P(string) && readonly_string_p(string)) {
