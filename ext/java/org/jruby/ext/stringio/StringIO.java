@@ -819,8 +819,31 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
     }
 
+    // MRI: the encoding check in prepare_getline_args
+    //
+    // Getline.getlineCall does this with the encoding fetched before the
+    // argument conversions, which may reopen this stream.
+    private IRubyObject checkRSEncoding(ThreadContext context, IRubyObject rs) {
+        if (getPtrForRead().string == null || !(rs instanceof RubyString)) return rs;
+
+        RubyString rsStr = (RubyString) rs;
+        Encoding encRs = rsStr.getEncoding();
+        Encoding encIo = getEncoding();
+        if (encRs != encIo &&
+                (rsStr.scanForCodeRange() != StringSupport.CR_7BIT ||
+                        (rsStr.size() > 0 && !encIo.isAsciiCompatible()))) {
+            if (rs == context.runtime.getGlobalVariables().getDefaultSeparator()) {
+                rs = RubyString.newEmptyString(context.runtime, encIo).cat('\n', encIo);
+            } else {
+                throw context.runtime.newArgumentError("encoding mismatch: " + encIo + " IO with " + encRs + " RS");
+            }
+        }
+        return rs;
+    }
+
     private static final Getline.Callback<StringIO, IRubyObject> GETLINE = (context, self, rs, limit, chomp, block) -> {
         self.checkReadable();
+        rs = self.checkRSEncoding(context, rs);
 
         if (limit == 0) {
             if (self.getPtrForWrite().string == null) return context.nil;
@@ -848,6 +871,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
         }
 
+        rs = self.checkRSEncoding(context, rs);
+
         if (rs.isNil()) chomp = false;
 
         while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
@@ -870,6 +895,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (limit == 0) {
             throw context.runtime.newArgumentError("invalid limit: 0 for readlines");
         }
+
+        rs = self.checkRSEncoding(context, rs);
 
         if (rs.isNil()) chomp = false;
 
