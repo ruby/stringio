@@ -1256,6 +1256,16 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal(["new", "hello"], [g.string, shared.read])
   end
 
+  def test_seek_reopen_to_closed_during_whence_conversion
+    f = StringIO.new("hello")
+    g = StringIO.new("world")
+    g.close
+    c = Object.new
+    c.define_singleton_method(:to_int) {f.reopen(g); 0}
+    assert_raise(IOError) {f.seek(3, c)}
+    assert_equal(0, g.pos)
+  end
+
   def test_reopen_in_each_line_block
     f = StringIO.new("a\nb\nc\n")
     g = StringIO.new("x\ny\n")

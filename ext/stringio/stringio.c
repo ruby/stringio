@@ -964,11 +964,11 @@ strio_seek(int argc, VALUE *argv, VALUE self)
 
     rb_scan_args(argc, argv, "11", NULL, &whence);
     amount = NUM2LEN(argv[0]);
+    w = NIL_P(whence) ? 0 : NUM2LONG(whence);
+    ptr = StringIO(self);
     if (CLOSED(self)) {
 	rb_raise(rb_eIOError, "closed stream");
     }
-    w = NIL_P(whence) ? 0 : NUM2LONG(whence);
-    ptr = StringIO(self);
     switch (w) {
       case 0:
 	offset = 0;
