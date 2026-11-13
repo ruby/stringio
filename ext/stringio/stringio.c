@@ -1755,7 +1755,7 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 static VALUE
 strio_gets(int argc, VALUE *argv, VALUE self)
 {
-    struct StringIO *ptr = readable(self);
+    struct StringIO *ptr;
     struct getline_arg arg;
     VALUE str;
 
@@ -1989,7 +1989,7 @@ static VALUE
 strio_each(int argc, VALUE *argv, VALUE self)
 {
     VALUE line;
-    struct StringIO *ptr = readable(self);
+    struct StringIO *ptr;
     struct getline_arg arg;
 
     RETURN_ENUMERATOR(self, argc, argv);
@@ -1998,7 +1998,7 @@ strio_each(int argc, VALUE *argv, VALUE self)
 	rb_raise(rb_eArgError, "invalid limit: 0 for each_line");
     }
 
-    while (!NIL_P(line = strio_getline(&arg, StringIOForRead(self)))) {
+    while (!NIL_P(line = strio_getline(&arg, readable(self)))) {
 	rb_yield(line);
     }
     return self;
@@ -2016,7 +2016,7 @@ static VALUE
 strio_readlines(int argc, VALUE *argv, VALUE self)
 {
     VALUE ary, line;
-    struct StringIO *ptr = readable(self);
+    struct StringIO *ptr;
     struct getline_arg arg;
 
     if (prepare_getline_args(self, &ptr, &arg, argc, argv)->limit == 0) {

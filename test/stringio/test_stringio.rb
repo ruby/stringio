@@ -1274,6 +1274,38 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal(["a\n", "x\n", "y\n"], lines)
   end
 
+  def test_reopen_to_unreadable_in_each_line_block
+    f = StringIO.new("a\nb\n")
+    g = StringIO.new("x\ny\n")
+    g.close_read
+    lines = []
+    assert_raise(IOError) {f.each_line {|l| lines << l; f.reopen(g)}}
+    assert_equal(["a\n"], lines)
+  end
+
+  def test_close_in_each_line_block
+    f = StringIO.new("a\nb\n")
+    lines = []
+    assert_raise(IOError) {f.each_line {|l| lines << l; f.close}}
+    assert_equal(["a\n"], lines)
+  end
+
+  def test_each_line_without_block_on_closed_stream
+    f = StringIO.new("a\nb\n")
+    f.close
+    assert_kind_of(Enumerator, f.each_line)
+  end
+
+  def test_getline_methods_convert_arguments_before_readable_check
+    f = StringIO.new("a\nb\n")
+    f.close
+    c = Object.new
+    c.define_singleton_method(:to_str) {raise TypeError, "converted"}
+    assert_raise_with_message(TypeError, "converted") {f.gets(c)}
+    assert_raise_with_message(TypeError, "converted") {f.readlines(c)}
+    assert_raise_with_message(TypeError, "converted") {f.each_line(c) {}}
+  end
+
   def test_reopen_during_argument_conversion_to_underlying_string
     ops = [
       ->(f, c, g) {f.read(c, g.string)},
