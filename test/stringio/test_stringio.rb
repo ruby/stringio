@@ -1274,6 +1274,31 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal(["a\n", "x\n", "y\n"], lines)
   end
 
+  def test_reopen_to_unwritable_during_write_conversion
+    f = StringIO.new("hello".dup)
+    g = StringIO.new("world".dup, "r")
+    c = Object.new
+    c.define_singleton_method(:to_s) {f.reopen(g); "XY"}
+    assert_raise(IOError) {f.write(c)}
+    assert_equal("world", g.string)
+  end
+
+  def test_reopen_in_each_byte_block
+    f = StringIO.new("ab")
+    g = StringIO.new("xy")
+    bytes = []
+    f.each_byte {|b| bytes << b; f.reopen(g)}
+    assert_equal("axy".bytes, bytes)
+  end
+
+  def test_reopen_in_each_codepoint_block
+    f = StringIO.new("ab")
+    g = StringIO.new("xy")
+    codepoints = []
+    f.each_codepoint {|c| codepoints << c; f.reopen(g)}
+    assert_equal("axy".codepoints, codepoints)
+  end
+
   def test_reopen_to_unreadable_in_each_line_block
     f = StringIO.new("a\nb\n")
     g = StringIO.new("x\ny\n")

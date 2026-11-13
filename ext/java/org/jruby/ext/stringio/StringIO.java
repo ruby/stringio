@@ -630,22 +630,24 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         if (!block.isGiven()) return enumeratorize(runtime, this, "each_byte");
 
-        checkReadable();
-        StringIOData ptr = this.getPtrForWrite();
+        while (true) {
+            // Fetch the data for each byte, since the block may close or
+            // reopen this stream.
+            checkReadable();
+            StringIOData ptr = this.getPtrForWrite();
+            int c;
 
-        boolean locked = lock(context, ptr);
-        try {
-            ByteList bytes = ptr.string.getByteList();
-
-            // Check the length every iteration, since
-            // the block can modify this string.
-            while (ptr.pos < bytes.length()) {
-                // check readability for each loop, since it could get closed
-                checkReadable();
-                block.yield(context, runtime.newFixnum(bytes.get(ptr.pos++) & 0xFF));
+            boolean locked = lock(context, ptr);
+            try {
+                if (ptr.string == null) break;
+                ByteList bytes = ptr.string.getByteList();
+                if (ptr.pos >= bytes.length()) break;
+                c = bytes.get(ptr.pos++) & 0xFF;
+            } finally {
+                if (locked) unlock(ptr);
             }
-        } finally {
-            if (locked) unlock(ptr);
+
+            block.yield(context, runtime.newFixnum(c));
         }
 
         return this;
@@ -1747,6 +1749,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         RubyString str = arg.asString();
         int len, olen;
 
+        // The conversion above may reopen this stream.
+        checkWritable();
         StringIOData ptr = this.getPtrForWrite();
 
         boolean locked = lock(context, ptr);
@@ -1976,31 +1980,35 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         if (!block.isGiven()) return enumeratorize(runtime, this, "each_codepoint");
 
         checkReadable();
+        final Encoding enc = getEncoding();
 
-        StringIOData ptr = this.getPtrForWrite();
+        while (true) {
+            // Fetch the data for each codepoint, since the block may close or
+            // reopen this stream.
+            checkReadable();
+            StringIOData ptr = this.getPtrForWrite();
+            int c;
 
-        boolean locked = lock(context, ptr);
-        try {
-            final Encoding enc = getEncoding();
-            RubyString myString = ptr.string;
-            final ByteList string = myString.getByteList();
-            final byte[] stringBytes = string.getUnsafeBytes();
-            int begin = string.getBegin();
-            for (; ; ) {
-                // check readability for each loop, since it could get closed
-                checkReadable();
-
+            boolean locked = lock(context, ptr);
+            try {
+                if (ptr.string == null) break;
+                final ByteList string = ptr.string.getByteList();
+                final byte[] stringBytes = string.getUnsafeBytes();
+                int begin = string.getBegin();
                 int pos = ptr.pos;
-                if (pos >= string.realSize()) return this;
+                if (pos >= string.realSize()) break;
 
-                int c = StringSupport.codePoint(runtime, enc, stringBytes, begin + pos, stringBytes.length);
+                c = StringSupport.codePoint(runtime, enc, stringBytes, begin + pos, stringBytes.length);
                 int n = StringSupport.codeLength(enc, c);
                 ptr.pos = pos + n;
-                block.yield(context, runtime.newFixnum(c));
+            } finally {
+                if (locked) unlock(ptr);
             }
-        } finally {
-            if (locked) unlock(ptr);
+
+            block.yield(context, runtime.newFixnum(c));
         }
+
+        return this;
     }
 
     public static class GenericReadable {
