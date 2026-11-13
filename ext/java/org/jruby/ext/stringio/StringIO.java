@@ -2008,9 +2008,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         if (!block.isGiven()) return enumeratorize(runtime, this, "each_codepoint");
 
-        checkReadable();
-        final Encoding enc = getEncoding();
-
         while (true) {
             // Fetch the data for each codepoint, since the block may close or
             // reopen this stream.
@@ -2027,6 +2024,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 int pos = ptr.pos;
                 if (pos >= string.realSize()) break;
 
+                final Encoding enc = getEncoding();
                 c = StringSupport.codePoint(runtime, enc, stringBytes, begin + pos, begin + string.realSize());
                 int n = StringSupport.codeLength(enc, c);
                 ptr.pos = pos + n;
