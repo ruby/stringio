@@ -1232,6 +1232,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (str.isNil()) {
                     return RubyString.newEmptyString(runtime);
                 }
+                ((RubyString) str).resize(0);
                 return (RubyString) str;
             }
 

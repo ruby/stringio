@@ -851,8 +851,8 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal "".b, StringIO.new("").pread(0, 0)
 
     buf = "stale".b
-    assert_equal "stale".b, StringIO.new("").pread(0, 0, buf)
-    assert_equal "stale".b, buf
+    assert_same buf, StringIO.new("").pread(0, 0, buf)
+    assert_equal "".b, buf
 
     assert_nothing_raised { StringIO.new("pread").freeze.pread(3, 0)}
   end

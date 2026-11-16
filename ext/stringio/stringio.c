@@ -2479,6 +2479,7 @@ strio_pread(int argc, VALUE *argv, VALUE self)
 	if (NIL_P(rb_buf)) {
 	    return rb_str_new("", 0);
 	}
+	rb_str_resize(rb_buf, 0);
 	return rb_buf;
     }
 
