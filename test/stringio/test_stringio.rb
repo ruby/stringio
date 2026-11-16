@@ -1345,6 +1345,7 @@ class TestStringIO < Test::Unit::TestCase
     f.freeze
     assert_raise(FrozenError) {f.send(:initialize_copy, StringIO.new("world"))}
     assert_equal("hello", f.string)
+    assert_same(f, f.send(:initialize_copy, f))
   end
 
   def test_write_null_device_with_encoding
@@ -1526,6 +1527,13 @@ class TestStringIO < Test::Unit::TestCase
       c.define_singleton_method(:to_str) {f.reopen(g); "\n"}
       assert_raise(ArgumentError, op.source_location.join(":")) {op.call(f, c)}
     end
+  end
+
+  def test_dup_and_clone_frozen
+    f = StringIO.new("hello")
+    f.freeze
+    assert_equal(["hello", false], [f.dup.string, f.dup.frozen?])
+    assert_equal(["hello", true], [f.clone.string, f.clone.frozen?])
   end
 
   def test_reopen_to_unwritable_during_write_conversion
