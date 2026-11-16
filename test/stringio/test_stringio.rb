@@ -752,6 +752,10 @@ class TestStringIO < Test::Unit::TestCase
     s = "0123456789"
     assert_same(s, f.read(nil, s))
     assert_equal("\u3042\u3044", s)
+    # at EOF
+    s = "buf".b
+    assert_same(s, f.read(0, s))
+    assert_equal("", s)
 
     bug13806 = '[ruby-core:82349] [Bug #13806]'
     assert_string("", Encoding::UTF_8, f.read, bug13806)
