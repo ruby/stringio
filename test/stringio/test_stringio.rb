@@ -1442,6 +1442,7 @@ class TestStringIO < Test::Unit::TestCase
   # $LOAD_PATH.  This must run in a separate process because it's
   # called only when they aren't loaded yet.
   def assert_reopen_during_load(prepare, operate)
+    omit "JRuby doesn't load transcoders and encodings" if RUBY_ENGINE == "jruby"
     assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
     begin;
       f, g = #{prepare}
@@ -1493,6 +1494,7 @@ class TestStringIO < Test::Unit::TestCase
   end
 
   def test_reopen_during_integer_and_in_ungetbyte
+    omit "JRuby doesn't call Integer#&" if RUBY_ENGINE == "jruby"
     assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
     begin;
       f = StringIO.new("hello".dup)
