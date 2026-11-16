@@ -423,6 +423,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         if (this == otherIO) return this;
 
+        checkFrozen();
+
         ptr = otherIO.getPtrForRead();
         flags = (byte) (flags & ~STRIO_READWRITE | otherIO.flags & STRIO_READWRITE);
 

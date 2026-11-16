@@ -1419,6 +1419,30 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal("hello", f.string)
   end
 
+  def test_reopen_freeze_during_to_strio
+    f = StringIO.new("hello")
+    g = StringIO.new("world")
+    c = Object.new
+    c.define_singleton_method(:to_strio) {f.freeze; g}
+    assert_raise(FrozenError) {f.reopen(c)}
+    assert_equal("hello", f.string)
+  end
+
+  def test_initialize_copy_frozen
+    f = StringIO.new("hello")
+    f.freeze
+    assert_raise(FrozenError) {f.send(:initialize_copy, StringIO.new("world"))}
+    assert_equal("hello", f.string)
+    assert_same(f, f.send(:initialize_copy, f))
+  end
+
+  def test_dup_and_clone_frozen
+    f = StringIO.new("hello")
+    f.freeze
+    assert_equal(["hello", false], [f.dup.string, f.dup.frozen?])
+    assert_equal(["hello", true], [f.clone.string, f.clone.frozen?])
+  end
+
   def test_reopen_to_unwritable_during_write_conversion
     f = StringIO.new("hello".dup)
     g = StringIO.new("world".dup, "r")

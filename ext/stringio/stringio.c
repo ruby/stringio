@@ -804,6 +804,7 @@ strio_copy(VALUE copy, VALUE orig)
 
     orig = rb_convert_type(orig, T_DATA, "StringIO", "to_strio");
     if (copy == orig) return copy;
+    rb_check_frozen(copy);
     ptr = StringIOForRead(orig);
     old_ptr = check_strio(copy);
     if (old_ptr) {
