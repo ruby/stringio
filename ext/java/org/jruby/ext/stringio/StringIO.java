@@ -371,7 +371,6 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
             // switch to per-use oflags if it is ever used in the future
             EncodingUtils.extractModeEncoding(context, ioEncodable, vmodeAndVpermP, maybeOptions, OFLAGS_UNUSED, fmode);
-            ptr.flags = fmode[0];
             vmode = EncodingUtils.vmode(vmodeAndVpermP);
 
             if (!string.isNil()) {
@@ -379,6 +378,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             } else if (argc == 0) {
                 string = RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding());
             }
+            // The conversions above may freeze this stream.
+            checkFrozen();
+            ptr.flags = fmode[0];
 
             if (!string.isNil() && string.isFrozen()) {
                 if ((ptr.flags & OpenFile.WRITABLE) != 0) {
@@ -417,6 +419,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 context.runtime.getClass("StringIO"), "to_strio");
 
         if (this == otherIO) return this;
+
+        checkFrozen();
 
         ptr = otherIO.getPtrForRead();
         flags = (byte) (flags & ~STRIO_READWRITE | otherIO.flags & STRIO_READWRITE);
