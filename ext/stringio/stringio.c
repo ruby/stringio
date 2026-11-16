@@ -933,6 +933,7 @@ strio_set_pos(VALUE self, VALUE pos)
 {
     struct StringIO *ptr = StringIO(self);
     rb_len_t p = NUM2LEN(pos);
+    /* The conversion above may reopen this stream. */
     ptr = StringIO(self);
     if (p < 0) {
 	error_inval(0);
@@ -977,6 +978,7 @@ strio_seek(int argc, VALUE *argv, VALUE self)
     rb_scan_args(argc, argv, "11", NULL, &whence);
     amount = NUM2LEN(argv[0]);
     w = NIL_P(whence) ? 0 : NUM2LONG(whence);
+    /* The conversions above may reopen this stream. */
     ptr = StringIO(self);
     if (CLOSED(self)) {
 	rb_raise(rb_eIOError, "closed stream");
@@ -1232,6 +1234,7 @@ strio_ungetc(VALUE self, VALUE c)
     }
     else {
 	StringValue(c);
+	/* The conversion above may reopen this stream. */
 	ptr = readable(self);
 	check_modifiable(ptr);
 	if (NIL_P(ptr->string)) return Qnil;
@@ -1274,6 +1277,7 @@ strio_ungetbyte(VALUE self, VALUE c)
     else {
 	StringValue(c);
     }
+    /* The conversions above may reopen this stream. */
     ptr = readable(self);
     check_modifiable(ptr);
     if (NIL_P(ptr->string)) return Qnil;
@@ -2077,6 +2081,7 @@ strio_write(VALUE self, VALUE str)
 
     if (!RB_TYPE_P(str, T_STRING))
 	str = rb_obj_as_string(str);
+    /* The conversion above may reopen this stream. */
     ptr = writable(self);
     enc = get_enc(ptr);
     if (!enc) return 0;
@@ -2242,6 +2247,7 @@ strio_putc(VALUE self, VALUE ch)
     }
     else {
 	char c = NUM2CHR(ch);
+	/* The conversion above may reopen this stream. */
 	ptr = writable(self);
 	if (NIL_P(ptr->string)) return ch;
 	str = rb_str_new(&c, 1);
@@ -2365,6 +2371,7 @@ strio_read(int argc, VALUE *argv, VALUE self)
 	    if (len < 0) {
 		rb_raise(rb_eArgError, "negative length %"PRIdLEN" given", len);
 	    }
+	    /* The conversions above may reopen this stream. */
 	    ptr = readable(self);
 	    str = strio_readbuf(self, str);
 	    if (eos_p(ptr)) {
@@ -2376,6 +2383,7 @@ strio_read(int argc, VALUE *argv, VALUE self)
 	}
 	/* fall through */
       case 0:
+	/* The conversions above may reopen this stream. */
 	ptr = readable(self);
 	if (NIL_P(ptr->string)) return Qnil;
 	len = RSTRING_LEN(ptr->string);
@@ -2503,6 +2511,7 @@ strio_pread(int argc, VALUE *argv, VALUE self)
     }
 
     rb_buf = strio_readbuf(self, rb_buf);
+    /* The conversions above may reopen this stream. */
     ptr = readable(self);
 
     if (len == 0) {
@@ -2633,6 +2642,7 @@ strio_truncate(VALUE self, VALUE len)
     VALUE string = writable(self)->string;
     rb_len_t l = NUM2LEN(len);
     rb_len_t plen;
+    /* The conversion above may reopen this stream. */
     string = writable(self)->string;
     if (l < 0) {
 	error_inval("negative length");
@@ -2716,6 +2726,7 @@ strio_set_encoding(int argc, VALUE *argv, VALUE self)
 	    enc = convconfig.enc2;
 	}
     }
+    /* The conversions above may reopen this stream. */
     ptr = StringIO(self);
     ptr->enc = enc;
     if (!NIL_P(ptr->string) && WRITABLE(self) && !str_chilled_p(ptr->string)) {
