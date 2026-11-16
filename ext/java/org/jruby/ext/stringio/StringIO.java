@@ -1727,8 +1727,8 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         boolean locked = lock(context, ptr);
         try {
+            if (ptr.string == null) return 0;
             final Encoding enc = getEncoding();
-            if (enc == null) return 0;
             Encoding encStr = str.getEncoding();
             if (enc != encStr && enc != ASCIIEncoding.INSTANCE && enc != USASCIIEncoding.INSTANCE) {
                 RubyString converted = EncodingUtils.strConvEnc(context, str, encStr, enc);
@@ -1887,6 +1887,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         int p;
         int len;
 
+        if (str == null) return null;
         ByteList byteList = str.getByteList();
         byte[] bytes = byteList.unsafeBytes();
         p = byteList.begin();
