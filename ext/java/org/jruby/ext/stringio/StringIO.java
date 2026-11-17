@@ -1018,7 +1018,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject set_pos(IRubyObject arg) {
         checkInitialized();
 
-        long p = RubyNumeric.fix2long(arg);
+        long p = RubyNumeric.num2long(arg);
 
         if (p < 0) throw getRuntime().newErrnoEINVALError(arg.toString());
 
