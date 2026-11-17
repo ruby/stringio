@@ -899,8 +899,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             int w = 0;
 
             if (limit > 0 && s + limit < e) {
-                // a fixed-width encoding may step past a truncated last character
-                e = Math.min(e, getEncoding().rightAdjustCharHead(stringBytes, s, s + limit, e));
+                e = rightCharHead(enc, stringBytes, s, s + limit, e);
             }
             if (rs == context.nil) {
                 if (chomp) {
@@ -977,6 +976,25 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
 
         return str;
+    }
+
+    // MRI: rb_enc_right_char_head, bounded on the end of the string
+    //
+    // Encoding#rightAdjustCharHead can't be used here.  For a broken
+    // character, it may return a position before s or after e, and
+    // Encoding#leftAdjustCharHead may read a byte after the given position.
+    private static int rightCharHead(Encoding enc, byte[] bytes, int s, int p, int e) {
+        int min = enc.minLength();
+        int head = p + min > e ? p - (p - s) % min : p;
+        if (head + min <= e) {
+            head = Math.max(s, Math.min(head, enc.leftAdjustCharHead(bytes, s, head, e)));
+        }
+        if (head < p) {
+            int n = enc.isFixedWidth() ? min : enc.length(bytes, head, e);
+            // n is -1 for an invalid character, and less for a truncated one
+            head += n > 0 ? n : n < -1 ? e - head : 1;
+        }
+        return Math.min(head, e);
     }
 
     private static int chompNewlineWidth(byte[] bytes, int s, int e) {
