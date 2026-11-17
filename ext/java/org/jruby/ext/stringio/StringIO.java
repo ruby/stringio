@@ -432,7 +432,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     public IRubyObject binmode(ThreadContext context) {
         StringIOData ptr = this.getPtrForWrite();
         ptr.enc = EncodingUtils.ascii8bitEncoding(context.runtime);
-        if (writable()) ptr.string.setEncoding(ptr.enc);
+        if (writable() && ptr.string != null) ptr.string.setEncoding(ptr.enc);
 
         return this;
     }
@@ -529,6 +529,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = "each", writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+        if (getPtrForWrite().string == null) return this;
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 0, null, null, null, block);
     }
@@ -537,6 +538,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = "each", writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, IRubyObject arg0, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", arg0);
+        if (getPtrForWrite().string == null) return this;
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 1, arg0, null, null, block);
     }
@@ -545,6 +547,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = "each", writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", Helpers.arrayOf(arg0, arg1));
+        if (getPtrForWrite().string == null) return this;
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 2, arg0, arg1, null, block);
     }
@@ -553,6 +556,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
     @JRubyMethod(name = "each")
     public IRubyObject each(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", Helpers.arrayOf(arg0, arg1, arg2));
+        if (getPtrForWrite().string == null) return this;
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getEncoding(), 3, arg0, arg1, arg2, block);
     }
@@ -627,6 +631,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
         checkReadable();
         StringIOData ptr = this.getPtrForWrite();
+        if (ptr.string == null) return this;
 
         boolean locked = lock(context, ptr);
         try {
@@ -1268,21 +1273,25 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
 
     @JRubyMethod(name = "readlines")
     public IRubyObject readlines(ThreadContext context) {
+        if (getPtrForWrite().string == null) return context.runtime.newArray();
         return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding());
     }
 
     @JRubyMethod(name = "readlines")
     public IRubyObject readlines(ThreadContext context, IRubyObject arg0) {
+        if (getPtrForWrite().string == null) return context.runtime.newArray();
         return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding(), arg0);
     }
 
     @JRubyMethod(name = "readlines")
     public IRubyObject readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        if (getPtrForWrite().string == null) return context.runtime.newArray();
         return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding(), arg0, arg1);
     }
 
     @JRubyMethod(name = "readlines")
     public IRubyObject readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        if (getPtrForWrite().string == null) return context.runtime.newArray();
         return Getline.getlineCall(context, GETLINE_ARY, this, getEncoding(), arg0, arg1, arg2);
     }
 
@@ -1949,6 +1958,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         checkReadable();
 
         StringIOData ptr = this.getPtrForWrite();
+        if (ptr.string == null) return this;
 
         boolean locked = lock(context, ptr);
         try {
