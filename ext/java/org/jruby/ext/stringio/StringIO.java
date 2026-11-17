@@ -1120,7 +1120,11 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                         }
                         if (isEndOfString()) {
                             if (!str.isNil()) ((RubyString) str).resize(0);
-                            return len > 0 ? context.nil : runtime.newString();
+                            if (len == 0) {
+                                if (str.isNil()) str = runtime.newString();
+                                return str;
+                            }
+                            return context.nil;
                         }
                         binary = true;
                         break;
@@ -1227,6 +1231,7 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 if (str.isNil()) {
                     return RubyString.newEmptyString(runtime);
                 }
+                ((RubyString) str).resize(0);
                 return (RubyString) str;
             }
 
