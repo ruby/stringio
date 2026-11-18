@@ -1552,10 +1552,22 @@ chomp_newline_width(const char *s, const char *e)
     return 0;
 }
 
+static inline const char *
+getline_limit_end(struct StringIO *ptr, const char *s, const char *e, rb_len_t limit)
+{
+    if (limit > 0 && (size_t)limit < (size_t)(e - s)) {
+	const char *const end = e;
+	e = rb_enc_right_char_head(s, s + limit, e, get_enc(ptr));
+	/* a fixed-width encoding may step past a truncated last character */
+	if (e > end) e = end;
+    }
+    return e;
+}
+
 static VALUE
 strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 {
-    const char *s, *e, *p;
+    const char *s, *e, *p, *end;
     rb_len_t n, limit = arg->limit;
     VALUE str = arg->rs;
     rb_len_t w = 0;
@@ -1565,13 +1577,10 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 	return Qnil;
     }
     s = RSTRING_PTR(ptr->string);
-    e = s + RSTRING_LEN(ptr->string);
+    end = e = s + RSTRING_LEN(ptr->string);
     s += ptr->pos;
-    if (limit > 0 && (size_t)limit < (size_t)(e - s)) {
-	const char *const end = e;
-	e = rb_enc_right_char_head(s, s + limit, e, get_enc(ptr));
-	/* a fixed-width encoding may step past a truncated last character */
-	if (e > end) e = end;
+    if (NIL_P(str) || RSTRING_LEN(str) != 0) {
+	e = getline_limit_end(ptr, s, e, limit);
     }
     if (NIL_P(str)) {
 	if (arg->chomp) {
@@ -1580,15 +1589,18 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 	str = strio_substr(ptr, ptr->pos, e - s - w, enc);
     }
     else if ((n = RSTRING_LEN(str)) == 0) {
-	const char *paragraph_end = NULL;
+	const char *paragraph_end = NULL, *line_end;
 	p = s;
 	while (p[(p + 1 < e) && (*p == '\r') && 0] == '\n') {
 	    p += *p == '\r';
 	    if (++p == e) {
+		ptr->pos = e - RSTRING_PTR(ptr->string);
 		return Qnil;
 	    }
 	}
 	s = p;
+	/* like IO, the limit counts from the first non-newline character */
+	e = getline_limit_end(ptr, s, e, limit);
 	while ((p = memchr(p, '\n', e - p)) && (p != e)) {
 	    p++;
 	    if (!((p < e && *p == '\n') ||
@@ -1596,17 +1608,17 @@ strio_getline(struct getline_arg *arg, struct StringIO *ptr)
 		continue;
 	    }
 	    paragraph_end = p - ((*(p-2) == '\r') ? 2 : 1);
-	    while ((p < e && *p == '\n') ||
-		   (p + 1 < e && *p == '\r' && *(p+1) == '\n')) {
-		p += (*p == '\r') ? 2 : 1;
-	    }
-	    e = p;
+	    /* like IO, return the paragraph with only one empty line */
+	    e = p + ((*p == '\r') ? 2 : 1);
 	    break;
 	}
-	if (arg->chomp && paragraph_end) {
-	    w = e - paragraph_end;
+	line_end = (arg->chomp && paragraph_end) ? paragraph_end : e;
+	/* like IO, skip the following empty lines, even past the limit */
+	while ((e < end && *e == '\n') ||
+	       (e + 1 < end && *e == '\r' && *(e+1) == '\n')) {
+	    e += (*e == '\r') ? 2 : 1;
 	}
-	str = strio_substr(ptr, s - RSTRING_PTR(ptr->string), e - s - w, enc);
+	str = strio_substr(ptr, s - RSTRING_PTR(ptr->string), line_end - s, enc);
     }
     else if (n == 1) {
 	if ((p = memchr(s, RSTRING_PTR(str)[0], e - s)) != 0) {

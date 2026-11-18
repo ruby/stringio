@@ -898,9 +898,9 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             int p;
             int w = 0;
 
-            if (limit > 0 && s + limit < e) {
-                // a fixed-width encoding may step past a truncated last character
-                e = Math.min(e, getEncoding().rightAdjustCharHead(stringBytes, s, s + limit, e));
+            final int end = e;
+            if (rs == context.nil || ((RubyString) rs).size() != 0) {
+                e = getlineLimitEnd(stringBytes, s, e, limit);
             }
             if (rs == context.nil) {
                 if (chomp) {
@@ -908,14 +908,18 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                 }
                 str = strioSubstr(runtime, pos, e - s - w, enc);
             } else if ((n = ((RubyString) rs).size()) == 0) {
-                int paragraph_end = 0;
+                int paragraph_end = -1;
+                int line_end;
                 p = s;
                 while (stringBytes[p] == '\n') {
                     if (++p == e) {
+                        ptr.pos = e - begin;
                         return context.nil;
                     }
                 }
                 s = p;
+                // like IO, the limit counts from the first non-newline character
+                e = getlineLimitEnd(stringBytes, s, e, limit);
                 while ((p = Helpers.memchr(stringBytes, p, '\n', e - p)) != -1 && (p != e)) {
                     p++;
                     if (!((p < e && stringBytes[p] == '\n') ||
@@ -923,17 +927,17 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
                         continue;
                     }
                     paragraph_end = p - ((stringBytes[p-2] == '\r') ? 2 : 1);
-                    while ((p < e && stringBytes[p] == '\n') ||
-                    (p + 1 < e && stringBytes[p] == '\r' && stringBytes[p+1] == '\n')) {
-                        p += (stringBytes[p] == '\r') ? 2 : 1;
-                    }
-                    e = p;
+                    // like IO, return the paragraph with only one empty line
+                    e = p + ((stringBytes[p] == '\r') ? 2 : 1);
                     break;
                 }
-                if (chomp && paragraph_end != 0) {
-                    w = e - paragraph_end;
+                line_end = (chomp && paragraph_end != -1) ? paragraph_end : e;
+                // like IO, skip the following empty lines, even past the limit
+                while ((e < end && stringBytes[e] == '\n') ||
+                        (e + 1 < end && stringBytes[e] == '\r' && stringBytes[e+1] == '\n')) {
+                    e += (stringBytes[e] == '\r') ? 2 : 1;
                 }
-                str = strioSubstr(runtime, s - begin, e - s - w, enc);
+                str = strioSubstr(runtime, s - begin, line_end - s, enc);
             } else if (n == 1) {
                 RubyString strStr = (RubyString) rs;
                 ByteList strByteList = strStr.getByteList();
@@ -977,6 +981,14 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
         }
 
         return str;
+    }
+
+    private int getlineLimitEnd(byte[] bytes, int s, int e, int limit) {
+        if (limit > 0 && s + limit < e) {
+            // a fixed-width encoding may step past a truncated last character
+            e = Math.min(e, getEncoding().rightAdjustCharHead(bytes, s, s + limit, e));
+        }
+        return e;
     }
 
     private static int chompNewlineWidth(byte[] bytes, int s, int e) {
