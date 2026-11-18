@@ -143,6 +143,39 @@ class TestStringIO < Test::Unit::TestCase
     assert_string("", Encoding::UTF_8, StringIO.new("foo").gets(0))
   end
 
+  def test_gets_paragraph_extra_newlines
+    # Like IO, return the paragraph with only one empty line and skip
+    # the rest.
+    stringio = StringIO.new("abc\n\n\n\ndef\n\n\n")
+    assert_equal("abc\n\n", stringio.gets(""))
+    assert_equal(7, stringio.pos)
+    assert_equal("def\n\n", stringio.gets(""))
+    assert_equal(13, stringio.pos)
+    assert_nil(stringio.gets(""))
+    assert_equal(["abc\n\n", "def\n\n"], StringIO.new("abc\n\n\n\ndef\n\n\n").readlines(""))
+    assert_equal(["abc", "def"], StringIO.new("abc\n\n\n\ndef\n\n\n").readlines("", chomp: true))
+  end
+
+  def test_gets_paragraph_only_newlines
+    stringio = StringIO.new("\n\n\n")
+    assert_nil(stringio.gets(""))
+    assert_equal(3, stringio.pos)
+  end
+
+  def test_gets_paragraph_limit
+    # Like IO, the limit starts after the leading newlines.
+    stringio = StringIO.new("\n\nabc\n\ndef")
+    assert_equal("a", stringio.gets("", 1))
+    assert_equal("bc", stringio.gets("", 2))
+    # and the empty lines after a line cut by the limit are skipped.
+    assert_equal(7, stringio.pos)
+    assert_equal("def", stringio.gets("", 5))
+    assert_nil(stringio.gets("", 1))
+
+    assert_equal("\u3042", StringIO.new("\n\n\u3042\u3044").gets("", 1))
+    assert_equal("abc\n\n", StringIO.new("abc\n\n\n\nd").gets("", 5))
+  end
+
   def test_gets_utf_16
     stringio = StringIO.new("line1\nline2\nline3\n".encode("utf-16le"))
     assert_equal("line1\n".encode("utf-16le"), stringio.gets)
@@ -198,6 +231,7 @@ class TestStringIO < Test::Unit::TestCase
     stringio = StringIO.new("abc\r\n\r\ndef\r\n")
     assert_equal("abc", stringio.gets("", chomp: true))
     assert_equal("def\r\n", stringio.gets("", chomp: true))
+    assert_equal(["", "abc"], StringIO.new("\r\n\r\nabc").each_line("", chomp: true).to_a)
   end
 
   def test_readlines
@@ -695,12 +729,12 @@ class TestStringIO < Test::Unit::TestCase
     f.rewind
     assert_equal(["foo", "bar", "baz"], f.each(chomp: true).to_a)
     f = StringIO.new("foo\nbar\n\n\nbaz\n")
-    assert_equal(["foo\nbar\n\n\n", "baz\n"], f.each("").to_a)
+    assert_equal(["foo\nbar\n\n", "baz\n"], f.each("").to_a)
     f.rewind
     assert_equal(["foo\nbar", "baz\n"], f.each("", chomp: true).to_a)
 
     f = StringIO.new("foo\r\nbar\r\n\r\n\r\nbaz\r\n")
-    assert_equal(["foo\r\nbar\r\n\r\n\r\n", "baz\r\n"], f.each("").to_a)
+    assert_equal(["foo\r\nbar\r\n\r\n", "baz\r\n"], f.each("").to_a)
     f.rewind
     assert_equal(["foo\r\nbar", "baz\r\n"], f.each("", chomp: true).to_a)
 
