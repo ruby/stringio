@@ -1289,7 +1289,7 @@ strio_unget_bytes(struct StringIO *ptr, const char *cp, rb_len_t cl)
 	if (rest > cl) memset(s + len, 0, rest - cl);
 	pos -= cl;
     }
-    memcpy(s + pos, (cp ? cp : s), cl);
+    memmove(s + pos, (cp ? cp : s), cl);
     ptr->pos = pos;
     return Qnil;
 }

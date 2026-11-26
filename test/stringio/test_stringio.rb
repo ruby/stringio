@@ -1011,6 +1011,24 @@ class TestStringIO < Test::Unit::TestCase
     assert_match(/\A(?:abc){30}bc(?:abc){6}\z/, s.string)
   end
 
+  def test_ungetc_same_string_past_end
+    s = StringIO.new("abc", "r+")
+    s.pos = 4
+    s.ungetc(s.string)
+    assert_equal("aabc", s.string)
+    assert_equal(1, s.pos)
+  end
+
+  def test_ungetc_same_string_after_reallocation
+    original = "abc" * 1024
+    expected = original + original.byteslice(1..)
+    s = StringIO.new(original, "r+")
+    s.pos = 1
+    s.ungetc(s.string)
+    assert_equal(expected, s.string)
+    assert_equal(0, s.pos)
+  end
+
   def test_ungetbyte_pos
     b = '\\b00010001 \\B00010001 \\b1 \\B1 \\b000100011'
     s = StringIO.new( b )
