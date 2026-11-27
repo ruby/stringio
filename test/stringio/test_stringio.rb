@@ -1611,6 +1611,14 @@ class TestStringIO < Test::Unit::TestCase
     assert_raise_with_message(TypeError, "converted") {f.each_line(c) {}}
   end
 
+  def test_reopen_to_other_encoding_in_each_line_block
+    f = StringIO.new("a\nb\n")
+    g = StringIO.new("x\ny\n".encode("UTF-16LE"))
+    lines = []
+    f.each_line {|l| lines << l; f.reopen(g) if lines.size == 1}
+    assert_equal(["a\n", "x\n".encode("UTF-16LE"), "y\n".encode("UTF-16LE")], lines)
+  end
+
   def test_reopen_during_argument_conversion_to_underlying_string
     ops = [
       ->(f, c, g) {f.read(c, g.string)},

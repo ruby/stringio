@@ -1501,9 +1501,34 @@ bm_search(const char *little, rb_len_t llen, const char *big, rb_len_t blen, con
 
 struct getline_arg {
     VALUE rs;
+    VALUE orig_rs;
     rb_len_t limit;
     unsigned int chomp: 1;
 };
+
+static VALUE
+getline_rs(struct StringIO *ptr, VALUE rs)
+{
+    if (!NIL_P(ptr->string) && !NIL_P(rs)) {
+	rb_encoding *enc_rs, *enc_io;
+	enc_rs = rb_enc_get(rs);
+	enc_io = get_enc(ptr);
+	if (enc_rs != enc_io &&
+	    (rb_enc_str_coderange(rs) != ENC_CODERANGE_7BIT ||
+	     (RSTRING_LEN(rs) > 0 && !rb_enc_asciicompat(enc_io)))) {
+	    if (rs == rb_rs) {
+		rs = rb_enc_str_new(0, 0, enc_io);
+		rb_str_buf_cat_ascii(rs, "\n");
+	    }
+	    else {
+		rb_raise(rb_eArgError, "encoding mismatch: %s IO with %s RS",
+			 rb_enc_name(enc_io),
+			 rb_enc_name(enc_rs));
+	    }
+	}
+    }
+    return rs;
+}
 
 static struct getline_arg *
 prepare_getline_args(VALUE self, struct StringIO **ptrp, struct getline_arg *arg, int argc, VALUE *argv)
@@ -1539,25 +1564,8 @@ prepare_getline_args(VALUE self, struct StringIO **ptrp, struct getline_arg *arg
 	break;
     }
     *ptrp = ptr = readable(self);
-    if (!NIL_P(ptr->string) && !NIL_P(rs)) {
-	rb_encoding *enc_rs, *enc_io;
-	enc_rs = rb_enc_get(rs);
-	enc_io = get_enc(ptr);
-	if (enc_rs != enc_io &&
-	    (rb_enc_str_coderange(rs) != ENC_CODERANGE_7BIT ||
-	     (RSTRING_LEN(rs) > 0 && !rb_enc_asciicompat(enc_io)))) {
-	    if (rs == rb_rs) {
-		rs = rb_enc_str_new(0, 0, enc_io);
-		rb_str_buf_cat_ascii(rs, "\n");
-	    }
-	    else {
-		rb_raise(rb_eArgError, "encoding mismatch: %s IO with %s RS",
-			 rb_enc_name(enc_io),
-			 rb_enc_name(enc_rs));
-	    }
-	}
-    }
-    arg->rs = rs;
+    arg->orig_rs = rs;
+    arg->rs = getline_rs(ptr, rs);
     arg->limit = limit;
     arg->chomp = 0;
     if (!NIL_P(opts)) {
@@ -2029,8 +2037,11 @@ strio_each(int argc, VALUE *argv, VALUE self)
 	rb_raise(rb_eArgError, "invalid limit: 0 for each_line");
     }
 
-    while (!NIL_P(line = strio_getline(&arg, readable(self)))) {
+    while (!NIL_P(line = strio_getline(&arg, ptr))) {
+	struct StringIO *prev = ptr;
 	rb_yield(line);
+	ptr = readable(self);
+	if (ptr != prev) arg.rs = getline_rs(ptr, arg.orig_rs);
     }
     return self;
 }

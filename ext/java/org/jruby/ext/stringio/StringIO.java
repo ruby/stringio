@@ -871,12 +871,15 @@ public class StringIO extends RubyObject implements EncodingCapable, DataType {
             throw context.runtime.newArgumentError("invalid limit: 0 for each_line");
         }
 
+        IRubyObject origRs = rs;
         rs = self.checkRSEncoding(context, rs);
 
         if (rs.isNil()) chomp = false;
 
         while (!(line = self.getline(context, rs, limit, chomp)).isNil()) {
+            StringIOData prev = self.getPtrForRead();
             block.yieldSpecific(context, line);
+            if (self.getPtrForRead() != prev) rs = self.checkRSEncoding(context, origRs);
         }
 
         return self;
