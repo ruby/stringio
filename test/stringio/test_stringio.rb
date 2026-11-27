@@ -1300,9 +1300,20 @@ class TestStringIO < Test::Unit::TestCase
   end
 
   def test_new_during_mode_conversion
-    mode = Object.new
-    mode.define_singleton_method(:to_str) {StringIO.new("", "a"); "r"}
-    assert_predicate(StringIO.new("".dup, mode), :closed_write?)
+    inner = nil
+    c = Object.new
+    c.define_singleton_method(:to_str) {inner = StringIO.new("inner".dup, "a"); "r"}
+    outer = StringIO.new("outer".dup, c)
+    assert_equal(["outer", false, true, "inner", true, false],
+                 [outer.string, outer.closed_read?, outer.closed_write?,
+                  inner.string, inner.closed_read?, inner.closed_write?])
+
+    f = StringIO.new("hello".dup)
+    c = Object.new
+    c.define_singleton_method(:to_str) {f.set_encoding("UTF-16LE"); "r"}
+    f.reopen("outer".dup, c)
+    assert_equal(["outer", false, true],
+                 [f.string, f.closed_read?, f.closed_write?])
   end
 
   def test_reopen_freeze_during_argument_conversion
@@ -1334,6 +1345,7 @@ class TestStringIO < Test::Unit::TestCase
     f.freeze
     assert_raise(FrozenError) {f.send(:initialize_copy, StringIO.new("world"))}
     assert_equal("hello", f.string)
+    assert_same(f, f.send(:initialize_copy, f))
   end
 
   def test_write_null_device_with_encoding
@@ -1345,6 +1357,282 @@ class TestStringIO < Test::Unit::TestCase
   def test_set_encoding_by_bom_null_device
     assert_nil(StringIO.new(nil).set_encoding_by_bom)
     assert_nil(StringIO.new(nil, "r:BOM|UTF-8").string)
+  end
+
+  def test_reopen_during_argument_conversion
+    ops = [
+      ->(f, c) {f.read(c)},
+      ->(f, c) {f.read(5, c)},
+      ->(f, c) {f.pread(5, c)},
+      ->(f, c) {f.pread(5, 0, c)},
+      ->(f, c) {f.pos = c},
+      ->(f, c) {f.seek(c)},
+      ->(f, c) {f.lineno = c},
+      ->(f, c) {f.truncate(c)},
+      ->(f, c) {f.write(c)},
+      ->(f, c) {f.putc(c)},
+      ->(f, c) {f.ungetc(c)},
+      ->(f, c) {f.ungetbyte(c)},
+      ->(f, c) {f.gets(c)},
+      ->(f, c) {f.gets(nil, c)},
+      ->(f, c) {f.readlines(c)},
+      ->(f, c) {f.each_line(c) {}},
+      ->(f, c) {f.string = c},
+      ->(f, c) {f.reopen("", c)},
+    ]
+    ops.each do |op|
+      # Applies op to io.  io is reopened to target during the
+      # argument conversion if target is given.
+      run = ->(io, target) do
+        c = Object.new
+        c.define_singleton_method(:to_int) {io.reopen(target) if target; 5}
+        c.define_singleton_method(:to_str) {io.reopen(target) if target; "r".dup}
+        c.define_singleton_method(:to_s) {io.reopen(target) if target; "r".dup}
+        result = op.call(io, c)
+        result = nil if result.equal?(io) or result.equal?(c)
+        [result, io.pos, io.lineno, io.string]
+      end
+      message = op.source_location.join(":")
+      f = StringIO.new("hello\n" * 10)
+      g = StringIO.new("world\n" * 10)
+      actual = run.call(f, g)
+      assert_same(g.string, f.string, message)
+      # The operation must be applied to the reopened stream.
+      expected = run.call(StringIO.new("world\n" * 10), nil)
+      assert_equal(expected, actual, message)
+    end
+
+    f = StringIO.new("hello")
+    g = StringIO.new("world")
+    c = Object.new
+    c.define_singleton_method(:to_str) {f.reopen(g); "US-ASCII"}
+    f.set_encoding(c)
+    assert_equal(Encoding::US_ASCII, g.external_encoding)
+  end
+
+  def test_set_string_reopen_during_conversion_keeps_shared_stream
+    f = StringIO.new("hello")
+    shared = f.dup
+    g = StringIO.new("world")
+    c = Object.new
+    c.define_singleton_method(:to_str) {f.reopen(g); "new".dup}
+    f.string = c
+    assert_equal(["new", "hello"], [g.string, shared.read])
+  end
+
+  def test_seek_reopen_to_closed_during_whence_conversion
+    f = StringIO.new("hello")
+    g = StringIO.new("world")
+    g.close
+    c = Object.new
+    c.define_singleton_method(:to_int) {f.reopen(g); 0}
+    assert_raise(IOError) {f.seek(3, c)}
+    assert_equal(0, g.pos)
+  end
+
+  def test_reopen_in_each_line_block
+    f = StringIO.new("a\nb\nc\n")
+    g = StringIO.new("x\ny\n")
+    lines = []
+    f.each_line {|l| lines << l; f.reopen(g)}
+    assert_equal(["a\n", "x\n", "y\n"], lines)
+  end
+
+  # Loading a transcoder or an encoding calls #to_path of objects in
+  # $LOAD_PATH.  This must run in a separate process because it's
+  # called only when they aren't loaded yet.
+  def assert_reopen_during_load(prepare, operate)
+    omit "JRuby doesn't load transcoders and encodings" if RUBY_ENGINE == "jruby"
+    assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+      f, g = #{prepare}
+      path = Object.new
+      path.define_singleton_method(:to_path) do
+        if f
+          f.reopen(g)
+          f = nil
+          GC.start
+        end
+        "/nonexistent"
+      end
+      $LOAD_PATH.unshift(path)
+      begin
+        stream = f
+        actual = #{operate}
+      ensure
+        $LOAD_PATH.delete(path)
+      end
+      f, = #{prepare}
+      stream = f
+      expected = #{operate}
+      assert_equal(expected, actual)
+    end;
+  end
+
+  def test_reopen_during_transcoder_load_in_write
+    assert_reopen_during_load(<<-'PREPARE', <<-'OPERATE')
+      2.times.map {StringIO.new("".encode("EUC-JP"))}
+    PREPARE
+      [stream.write("\u3042"), stream.string]
+    OPERATE
+  end
+
+  def test_reopen_during_transcoder_load_in_ungetc
+    assert_reopen_during_load(<<-'PREPARE', <<-'OPERATE')
+      2.times.map {StringIO.new("abc".encode("EUC-JP"))}
+    PREPARE
+      [stream.ungetc("\u3042"), stream.string]
+    OPERATE
+  end
+
+  def test_reopen_during_encoding_load_in_set_encoding_by_bom
+    assert_reopen_during_load(<<-'PREPARE', <<-'OPERATE')
+      2.times.map {StringIO.new("\xFE\xFFab".b)}
+    PREPARE
+      [stream.set_encoding_by_bom, stream.pos, stream.string.encoding]
+    OPERATE
+  end
+
+  def test_reopen_during_integer_and_in_ungetbyte
+    omit "JRuby doesn't call Integer#&" if RUBY_ENGINE == "jruby"
+    assert_separately(%w[-rstringio], "#{<<-"begin;"}\n#{<<-"end;"}")
+    begin;
+      f = StringIO.new("hello".dup)
+      g = StringIO.new("world".dup)
+      stream = f
+      Integer.class_eval do
+        alias_method :and_without_reopen, :&
+        define_method(:&) do |other|
+          if f
+            reopening, f = f, nil
+            reopening.reopen(g)
+            GC.start
+          end
+          and_without_reopen(other)
+        end
+      end
+      stream.ungetbyte(0x41)
+      assert_equal("A", stream.read(1))
+    end;
+  end
+
+  def test_reopen_to_other_encoding_during_separator_conversion
+    ops = [
+      ->(f, c) {f.gets(c)},
+      ->(f, c) {f.readlines(c)},
+      ->(f, c) {f.each_line(c) {}},
+    ]
+    ops.each do |op|
+      f = StringIO.new("a\nb\n")
+      g = StringIO.new("x\ny\n".encode("UTF-16LE"))
+      c = Object.new
+      c.define_singleton_method(:to_str) {f.reopen(g); "\n"}
+      assert_raise(ArgumentError, op.source_location.join(":")) {op.call(f, c)}
+    end
+  end
+
+  def test_dup_and_clone_frozen
+    f = StringIO.new("hello")
+    f.freeze
+    assert_equal(["hello", false], [f.dup.string, f.dup.frozen?])
+    assert_equal(["hello", true], [f.clone.string, f.clone.frozen?])
+  end
+
+  def test_reopen_to_unwritable_during_write_conversion
+    f = StringIO.new("hello".dup)
+    g = StringIO.new("world".dup, "r")
+    c = Object.new
+    c.define_singleton_method(:to_s) {f.reopen(g); "XY"}
+    assert_raise(IOError) {f.write(c)}
+    assert_equal("world", g.string)
+  end
+
+  def test_reopen_in_each_byte_block
+    f = StringIO.new("ab")
+    g = StringIO.new("xy")
+    bytes = []
+    f.each_byte {|b| bytes << b; f.reopen(g)}
+    assert_equal("axy".bytes, bytes)
+  end
+
+  def test_reopen_in_each_codepoint_block
+    f = StringIO.new("ab")
+    g = StringIO.new("xy")
+    codepoints = []
+    f.each_codepoint {|c| codepoints << c; f.reopen(g)}
+    assert_equal("axy".codepoints, codepoints)
+  end
+
+  def test_reopen_to_other_encoding_in_each_codepoint_block
+    f = StringIO.new("ab")
+    g = StringIO.new("xy".encode("UTF-16LE"))
+    codepoints = []
+    f.each_codepoint {|c| codepoints << c; f.reopen(g)}
+    assert_equal("axy".codepoints, codepoints)
+  end
+
+  def test_each_codepoint_truncated_char_in_shared_string
+    s = "a\u3042zz"
+    f = StringIO.new(s.byteslice(0, 3))
+    codepoints = []
+    assert_raise(ArgumentError) {f.each_codepoint {|c| codepoints << c}}
+    assert_equal([0x61], codepoints)
+  end
+
+  def test_reopen_to_unreadable_in_each_line_block
+    f = StringIO.new("a\nb\n")
+    g = StringIO.new("x\ny\n")
+    g.close_read
+    lines = []
+    assert_raise(IOError) {f.each_line {|l| lines << l; f.reopen(g)}}
+    assert_equal(["a\n"], lines)
+  end
+
+  def test_close_in_each_line_block
+    f = StringIO.new("a\nb\n")
+    lines = []
+    assert_raise(IOError) {f.each_line {|l| lines << l; f.close}}
+    assert_equal(["a\n"], lines)
+  end
+
+  def test_each_line_without_block_on_closed_stream
+    f = StringIO.new("a\nb\n")
+    f.close
+    assert_kind_of(Enumerator, f.each_line)
+  end
+
+  def test_getline_methods_convert_arguments_before_readable_check
+    f = StringIO.new("a\nb\n")
+    f.close
+    c = Object.new
+    c.define_singleton_method(:to_str) {raise TypeError, "converted"}
+    assert_raise_with_message(TypeError, "converted") {f.gets(c)}
+    assert_raise_with_message(TypeError, "converted") {f.readlines(c)}
+    assert_raise_with_message(TypeError, "converted") {f.each_line(c) {}}
+  end
+
+  def test_reopen_to_other_encoding_in_each_line_block
+    f = StringIO.new("a\nb\n")
+    g = StringIO.new("x\ny\n".encode("UTF-16LE"))
+    lines = []
+    f.each_line {|l| lines << l; f.reopen(g) if lines.size == 1}
+    assert_equal(["a\n", "x\n".encode("UTF-16LE"), "y\n".encode("UTF-16LE")], lines)
+  end
+
+  def test_reopen_during_argument_conversion_to_underlying_string
+    ops = [
+      ->(f, c, g) {f.read(c, g.string)},
+      ->(f, c, g) {f.read(5, c)},
+      ->(f, c, g) {f.pread(5, 0, c)},
+    ]
+    ops.each do |op|
+      f = StringIO.new("hello")
+      g = StringIO.new("world")
+      c = Object.new
+      c.define_singleton_method(:to_int) {f.reopen(g); 5}
+      c.define_singleton_method(:to_str) {f.reopen(g); g.string}
+      assert_raise(ArgumentError, op.source_location.join(":")) {op.call(f, c, g)}
+    end
   end
 
   private
